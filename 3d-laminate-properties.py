@@ -21,24 +21,23 @@ class PlateLaminate():
 		else:
 			raise TypeError('lam is not type Laminate')
 
-		self.TotalThickness =
+		self.TotalThickness = 0
+		for ply in self.laminate:
+			self.TotalThickness += ply.Thickness
 
-	def buildTk(self):
-		# Build a private list containing each directions matrix and its inverse
+	def buildTks(self):
+		# Build T-Matrices for each ply and add them to that Ply object
 		# ASSUMPTIONS:
 		# 3 Direction is parallel to Z
-		T_list = []
-		Tinv_list = []
 
-		for ply in laminate:
-			orient = ply.Orientation
-			m1 = np.cos(np.radians(orient))
+		for ply in self.Laminate:
+			m1 = np.cos(np.radians(ply.Orientation))
 			#m2 = np.cos(np.radians(orient+90))
-			m2 = -np.sin(np.radians(orient))
+			m2 = -np.sin(np.radians(ply.Orientation))
 			m3 = 0
 			#n1 = np.cos(np.radians(90-orient))
-			n1 = np.sin(np.radians(orient))
-			n2 = np.cos(np.radians(orient))
+			n1 = np.sin(np.radians(ply.Orientation))
+			n2 = np.cos(np.radians(ply.Orientation))
 			n3 = 0
 			p1 = 0
 			p2 = 0
@@ -61,18 +60,15 @@ class PlateLaminate():
 			[0    , 0    , 0, n1, m1, 0          ], \
 			[m2*m1, n2*n1, 0, 0 , 0 , n1*m2+n2*m1]])
 
-			T_list.append(T)
-			Tinv_list.append(T.I)
+			ply.T = T
+			ply.Tinv = T.I
 
-		self.T = T_list
-		self.Tinv = Tinv_list
-
-	def buildHk(self):
-		# Build a private list of full H matrices for later slicing
+	def buildHks(self):
+		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
 		Sxyz_list = []
 		H_list = []
 		ct = 0
-		for ply in laminate:
+		for ply in self.Laminate:
 			Sk123 = np.matrix([ \
 			[1/ply.E11        , -ply.nu12/ply.E22, -ply.nu13/ply.E33, 0            , 0            , 0            ], \
 			[-ply.nu12/ply.E11, 1/ply.E22        , -ply.nu32/ply.E33, 0            , 0            , 0            ], \
@@ -81,12 +77,8 @@ class PlateLaminate():
 			[0                , 0                , 0                , 0            , 1/(2*ply.G13), 0            ], \
 			[0                , 0                , 0                , 0            , 0            , 1/(2*ply.G23)]])
 
-			Skxyz = self.Tinv[ct] * Sk123 * self.T[ct]
-			Hk = P * Skxyz.I * Pinv
-			Sxyz_list.append(Skxyz)
-			H_list.append(Hk)
-
-		self.Compliance = Sxyz_list
-		self.Hk = H_list
+			ply.Compliance = ply.Tinv * Sk123 * ply.T
+			ply.H = P * ply.Compliance.I * Pinv
 
 	def getLaminateProperties(self):
+		
