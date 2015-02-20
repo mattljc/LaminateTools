@@ -2,7 +2,6 @@ from composite_materials import *
 
 class Laminate():
 	#
-
 	def __init__(self, plyBook=None):
 		# Test type of plybook, test type of contents
 		if isinstance(plyBook, list):

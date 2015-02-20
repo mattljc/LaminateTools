@@ -1,4 +1,5 @@
 import numpy as np
+from composite_materials import *
 from ply_stack import *
 
 #beware the size of machine epsilon.... np.finfo(float).eps
@@ -7,30 +8,36 @@ class PlateLaminate():
 
 	#Define permutation matrix P to group inplane terms and its inverse
 	P = np.matrix([ \
-	[1,0,0,0,0,0,0], \
-	[0,1,0,0,0,0,0], \
-	[0,0,0,0,0,0,1], \
-	[0,0,0,1,0,0,0], \
-	[0,0,0,0,1,0,0], \
-	[0,0,1,0,0,0,0]])
+	[1,0,0,0,0,0], \
+	[0,1,0,0,0,0], \
+	[0,0,0,0,0,1], \
+	[0,0,0,1,0,0], \
+	[0,0,0,0,1,0], \
+	[0,0,1,0,0,0]])
 	Pinv = P.I
 
 	def __init__(self, lam=None):
 		if isinstance(lam, Laminate):
-			self.__laminate = lam
+			self.laminate = lam
 		else:
 			raise TypeError('lam is not type Laminate')
 
 		self.TotalThickness = 0
-		for ply in self.laminate:
+		self.TotalArealDensity = 0
+		for ply in self.laminate.PlyStack:
 			self.TotalThickness += ply.Thickness
+			self.TotalArealDensity += ply.Material.ArealDensity
+
+		self.buildTks()
+		self.buildHks()
+		self.getLaminateProperties()
 
 	def buildTks(self):
 		# Build T-Matrices for each ply and add them to that Ply object
 		# ASSUMPTIONS:
 		# 3 Direction is parallel to Z
 
-		for ply in self.Laminate:
+		for ply in self.laminate.PlyStack:
 			m1 = np.cos(np.radians(ply.Orientation))
 			#m2 = np.cos(np.radians(orient+90))
 			m2 = -np.sin(np.radians(ply.Orientation))
@@ -65,20 +72,76 @@ class PlateLaminate():
 
 	def buildHks(self):
 		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
-		Sxyz_list = []
-		H_list = []
-		ct = 0
-		for ply in self.Laminate:
-			Sk123 = np.matrix([ \
-			[1/ply.E11        , -ply.nu12/ply.E22, -ply.nu13/ply.E33, 0            , 0            , 0            ], \
-			[-ply.nu12/ply.E11, 1/ply.E22        , -ply.nu32/ply.E33, 0            , 0            , 0            ], \
-			[-ply.nu13/ply.E11, -ply.nu23/ply.E22, 1/ply.E33        , 0            , 0            , 0            ], \
-			[0                , 0                , 0                , 1/(2*ply.G23), 0            , 0            ], \
-			[0                , 0                , 0                , 0            , 1/(2*ply.G13), 0            ], \
-			[0                , 0                , 0                , 0            , 0            , 1/(2*ply.G23)]])
 
-			ply.Compliance = ply.Tinv * Sk123 * ply.T
-			ply.H = P * ply.Compliance.I * Pinv
+		for ply in self.laminate.PlyStack:
+			e11 = ply.Material.E11
+			e22 = ply.Material.E22
+			e33 = ply.Material.E33
+			nu12 = ply.Material.Nu12
+			nu13 = ply.Material.Nu13
+			nu23 = ply.Material.Nu23
+			g12 = ply.Material.G12
+			g13 = ply.Material.G13
+			g23 = ply.Material.G23
+
+			plyCompliance = np.matrix([ \
+			[1/e11    , -nu12/e22, -nu13/e33, 0        , 0        , 0        ], \
+			[-nu12/e11, 1/e22    , -nu23/e33, 0        , 0        , 0        ], \
+			[-nu13/e11, -nu23/e22, 1/e33    , 0        , 0        , 0        ], \
+			[0        , 0        , 0        , 1/(2*g23), 0        , 0        ], \
+			[0        , 0        , 0        , 0        , 1/(2*g13), 0        ], \
+			[0        , 0        , 0        , 0        , 0        , 1/(2*g23)]])
+
+			ply.GlobalCompliance = ply.Tinv * plyCompliance * ply.T
+			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
 
 	def getLaminateProperties(self):
-		
+
+		# Build the A-matrix, deconstruct and store properties.
+		able = np.matrix( np.zeros((3,3)) )
+		baker = np.matrix( np.zeros((3,3)) )
+		charlie = np.matrix( np.zeros((3,3)) )
+		dog = np.matrix( np.zeros((3,3)) )
+
+		for ply in self.laminate.PlyStack:
+			H_II = ply.H[0:3,0:3]
+			H_IS = ply.H[0:3,3:]
+			H_SI = ply.H[3:,0:3]
+			H_SS_inv = ply.H[3:,3:].I
+
+			able += H_SS_inv * (ply.Thickness / self.TotalThickness)
+			baker += H_SS_inv * H_SI * (ply.Thickness / self.TotalThickness)
+			charlie += H_IS * H_SS_inv * (ply.Thickness / self.TotalThickness)
+			dog += (H_II - H_IS * H_SS_inv * H_SI) / (ply.Thickness / self.TotalThickness)
+
+		self.TotalCompliance = np.matrix( np.zeros((6,6)) )
+		self.TotalCompliance[0:3,0:3] = dog + charlie * able.I * baker #A_II
+		self.TotalCompliance[0:3,3:] = charlie * able.I #A_IS
+		self.TotalCompliance[3:,0:3] = able.I * baker #A_SI
+		self.TotalCompliance[3:,3:] = able.I #A_SS
+
+		self.TotalCompliance = self.P * self.TotalCompliance.I * self.Pinv
+
+		self.Exx = 1 / self.TotalCompliance[0,0]
+		self.Eyy = 1 / self.TotalCompliance[1,1]
+		self.Ezz = 1 / self.TotalCompliance[2,2]
+		self.Gyz = 1 / (2 * self.TotalCompliance[3,3])
+		self.Gxz = 1 / (2 * self.TotalCompliance[4,4])
+		self.Gxy = 1 / (2 * self.TotalCompliance[5,5])
+		self.Nuxy = self.TotalCompliance[0,1] * -self.Exx
+		self.Nuxz = self.TotalCompliance[0,2] * -self.Exx
+		self.Nuyz = self.TotalCompliance[1,3] * -self.Eyy
+		self.Etaxs = self.TotalCompliance[0,5] * self.Exx
+		self.Etays = self.TotalCompliance[1,5] * self.Eyy
+		self.Etazs = self.TotalCompliance[2,5] * self.Ezz
+		self.Etart = self.TotalCompliance[3,4] * 2 * self.Gxz
+
+
+if __name__ == '__main__':
+
+	glassUni = RealCompositeMaterial(name='Glass Uni', E11_in=41e9, E22_in=10.4e9, E33_in=10.4e9, Nu12_in=0.28, Nu13_in=0.28, Nu23_in=0.50, G12_in=4.3e9, G13_in=4.3e9, G23_in=3.5e9, ArealDensity_in=1.97, CPT_in=1)
+	aPly = Ply(matl=glassUni, orient=90, thk=1)
+	thisLam = Laminate(plyBook=[aPly])
+
+	plate = PlateLaminate(lam=thisLam)
+	print(plate.Exx)
