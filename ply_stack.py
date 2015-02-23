@@ -14,6 +14,7 @@ class Laminate():
 		plyBook = plyBook*n_count
 		if symmetry:
 			plyBook += plyBook[::-1]
+
 		self.PlyStack = plyBook
 
 	def __str__(self):

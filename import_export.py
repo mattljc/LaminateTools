@@ -40,7 +40,7 @@ def fromXML(laminate_file=None):
 
 		Laminate_Dict.update({lamName:Laminate(copy.deepcopy(ply_stack),n_count,sym)})
 
-	return (Material_Dict, Laminate_Dict)
+	return {'mats':Material_Dict, 'lams':Laminate_Dict}
 
 def toXML(lamProps, properties_file=None):
 
@@ -48,7 +48,7 @@ def toXML(lamProps, properties_file=None):
 
 def toText(lamProps, properties_file='laminate_properties.txt'):
 	file = open(properties_file,'w')
-	file.write(str(LamProps))
+	file.write(lamProps.verboseString())
 	file.close()
 
 def toNASTRAN(properties_file='laminate_properties.mat9'):

@@ -104,10 +104,10 @@ class PlateLaminate():
 		dog = np.matrix( np.zeros((3,3)) )
 
 		for ply in self.laminate.PlyStack:
-			H_II = ply.H[0:3,0:3]
-			H_IS = ply.H[0:3,3:]
-			H_SI = ply.H[3:,0:3]
-			H_SS_inv = ply.H[3:,3:].I
+			H_II = np.matrix(ply.H[0:3,0:3])
+			H_IS = np.matrix(ply.H[0:3,3:])
+			H_SI = np.matrix(ply.H[3:,0:3])
+			H_SS_inv = np.matrix(ply.H[3:,3:]).I
 
 			able += H_SS_inv * (ply.Thickness / self.TotalThickness)
 			baker += H_SS_inv * H_SI * (ply.Thickness / self.TotalThickness)
