@@ -2,7 +2,7 @@ from composite_materials import *
 
 class Laminate():
 	#
-	def __init__(self, plyBook=None):
+	def __init__(self, plyBook=None, n_count=1, symmetry=False):
 		# Test type of plybook, test type of contents
 		if isinstance(plyBook, list):
 			for thing in plyBook:
@@ -11,6 +11,9 @@ class Laminate():
 		else:
 			raise TypeError('plyBook is not type List')
 
+		plyBook = plyBook*n_count
+		if symmetry:
+			plyBook += plyBook[::-1]
 		self.PlyStack = plyBook
 
 	def __str__(self):
@@ -21,9 +24,15 @@ class Laminate():
 			plyNumber += 1
 		return output
 
+	def __repr__(self):
+		output = '<plybook> \n'
+		for ply in self.PlyStack:
+			output += ('   '+ply.__repr__+'\n')
+		output += '</plybook>'
+
+
 class Ply():
 	#
-
 	def __init__(self, matl=None, orient=0, thk=None):
 		# Test material is appropriate type
 		if isinstance(matl, RealCompositeMaterial):
@@ -43,6 +52,9 @@ class Ply():
 		output = (str(self.Material)+' , '+str(self.Orientation)+' , '+str(self.Thickness))
 		return output
 
+	def __repr__(self):
+		return str('<ply material=\"',str(self.Material),'\" orientation=\"',str(self.Orientation),'\" thickness=\"',str(self.Thickness),'\" />')
+
 # Self test code
 if __name__ == '__main__':
 
@@ -50,6 +62,6 @@ if __name__ == '__main__':
 	fakeMaterial = RealCompositeMaterial(name='FakieCF', E11_in=1, E22_in=1, E33_in=1, Nu12_in=1, Nu13_in=1, Nu23_in=1, G12_in=1, G13_in=1, G23_in=1, ArealDensity_in=1, CPT_in=1)
 	fakePly = Ply(matl = fakeMaterial, orient=45)
 	fakeLaminate = Laminate([fakePly, fakePly, fakePly, fakePly])
-	print(fakeLaminate)
+	print(fakeLaminate.__repr__)
 
 	# These statements should not

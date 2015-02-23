@@ -20,6 +20,12 @@ class RealCompositeMaterial():
 	def __str__(self):
 		return self.Name
 
+	def __repr__(self):
+		return str('<materialProps name=\"',self.Name,'\" E11=\"',str(self.E11),'\" E22=\"',str(self.E22),'\" E33=\"',str(self.E33),
+		'\" nu12=\"',str(self.Nu12),'\" nu13=\"',str(self.Nu13),'\" nu23=\"',str(self.Nu23),
+		'\" G12=\"',str(self.G12),'\" G13=\"',str(self.G13),'\" G23=\"',str(self.G23),
+		'\" CPT=\"',str(self.CPT),'\" arealDensity=\"',str(self.ArealDensity),'\" />')
+
 # Save these two for a later day
 
 class UnidirectionalFabric(RealCompositeMaterial):
