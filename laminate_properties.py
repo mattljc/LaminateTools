@@ -63,7 +63,7 @@ class PlateLaminate():
 			[m1**2, n1**2, 0, 0 , 0 , 2*n1*m1    ], \
 			[m2**2, n2**2, 0, 0 , 0 , 2*n2*m2    ], \
 			[0    , 0    , 1, 0 , 0 , 0          ], \
-			[0    , 0    , 1, n2, m2, 0          ], \
+			[0    , 0    , 0, n2, m2, 0          ], \
 			[0    , 0    , 0, n1, m1, 0          ], \
 			[m2*m1, n2*n1, 0, 0 , 0 , n1*m2+n2*m1]])
 
@@ -136,6 +136,31 @@ class PlateLaminate():
 		self.Etazs = self.TotalCompliance[2,5] * self.Ezz
 		self.Etart = self.TotalCompliance[3,4] * 2 * self.Gxz
 
+	def __str__(self):
+		output = '==PLATE LAMINATE PROPERTES== \n'
+		output += ('E_xx={Exx:g}  E_yy={Eyy:g}  E_zz={Ezz:g}\n').format(Exx=self.Exx, Eyy=self.Eyy, Ezz=self.Ezz)
+		output += ('nu_xy={Nuxy:.3g}  nu_xz={Nuxz:.3g}  nu_yz={Nuyz:.3g}\n').format(Nuxy=self.Nuxy, Nuxz=self.Nuxz, Nuyz=self.Nuyz)
+		output += ('G_xy={Gxy:g}  G_xz={Gxz:g}  G_yz={Gyz:g}\n').format(Gxy=self.Gxy, Gxz=self.Gxz, Gyz=self.Gyz)
+		output += ('eta_xs={Etaxs:g}  eta_ys={Etays:g}  eta_zs={Etazs:g}\n').format(Etaxs=self.Etaxs, Etays=self.Etays, Etazs=self.Etazs)
+		output += ('eta_rt={Etart:g}\n').format(Etart=self.Etart)
+
+		return output
+
+
+	def verboseString(self):
+		np.set_printoptions(precision=5)
+		output = str(self)
+		output += 'Laminate C_xyz =\n'+str(self.TotalCompliance)+'\n'
+		output += '\n\n--PLY PROPERTIES--\n'
+		ct=1
+		for ply in self.laminate.PlyStack:
+			output += ('Ply #'+str(ct)+'\n')
+			output += (str(ply)+'\n')
+			output += ('Ply S_xyz=\n'+str(ply.GlobalCompliance)+'\n')
+			output += ('Ply H=\n'+str(ply.H)+'\n')
+			output += '----- \n\n'
+			ct+=1
+		return output
 
 if __name__ == '__main__':
 
@@ -144,4 +169,4 @@ if __name__ == '__main__':
 	thisLam = Laminate(plyBook=[aPly])
 
 	plate = PlateLaminate(lam=thisLam)
-	print(plate.Exx)
+	print(plate.verboseString())

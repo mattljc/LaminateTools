@@ -42,14 +42,16 @@ def fromXML(laminate_file=None):
 
 	return (Material_Dict, Laminate_Dict)
 
+def toXML(lamProps, properties_file=None):
 
-def fromKeyboard():
 	return None
 
-def toXML(properties_file=None):
-	return None
+def toText(lamProps, properties_file='laminate_properties.txt'):
+	file = open(properties_file,'w')
+	file.write(str(LamProps))
+	file.close()
 
-def toNASTRAN(properties_file=None):
+def toNASTRAN(properties_file='laminate_properties.mat9'):
 	return None
 
 def toABAQUS(properties_file=None):

@@ -49,7 +49,7 @@ class Ply():
 		self.Orientation = orient
 
 	def __str__(self):
-		output = (str(self.Material)+' , '+str(self.Orientation)+' , '+str(self.Thickness))
+		output = (str(self.Material)+' orient='+str(self.Orientation)+' thickness='+str(self.Thickness))
 		return output
 
 	def __repr__(self):
