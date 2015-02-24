@@ -109,10 +109,10 @@ class PlateLaminate():
 			H_SI = np.matrix(ply.H[3:,0:3])
 			H_SS_inv = np.matrix(ply.H[3:,3:]).I
 
-			able += H_SS_inv * (ply.Thickness / self.TotalThickness)
-			baker += H_SS_inv * H_SI * (ply.Thickness / self.TotalThickness)
-			charlie += H_IS * H_SS_inv * (ply.Thickness / self.TotalThickness)
-			dog += (H_II - H_IS * H_SS_inv * H_SI) / (ply.Thickness / self.TotalThickness)
+			able += np.matrix(H_SS_inv * (ply.Thickness / self.TotalThickness))
+			baker += np.matrix(H_SS_inv * H_SI * (ply.Thickness / self.TotalThickness))
+			charlie += np.matrix(H_IS * H_SS_inv * (ply.Thickness / self.TotalThickness))
+			dog += np.matrix((H_II - H_IS * H_SS_inv * H_SI) * (ply.Thickness / self.TotalThickness))
 
 		self.TotalCompliance = np.matrix( np.zeros((6,6)) )
 		self.TotalCompliance[0:3,0:3] = dog + charlie * able.I * baker #A_II
@@ -121,6 +121,7 @@ class PlateLaminate():
 		self.TotalCompliance[3:,3:] = able.I #A_SS
 
 		self.TotalCompliance = self.P * self.TotalCompliance.I * self.Pinv
+		#self.TotalCompliance = np.matrix(self.TotalCompliance.round(16))
 
 		self.Exx = 1 / self.TotalCompliance[0,0]
 		self.Eyy = 1 / self.TotalCompliance[1,1]
@@ -128,9 +129,9 @@ class PlateLaminate():
 		self.Gyz = 1 / (2 * self.TotalCompliance[3,3])
 		self.Gxz = 1 / (2 * self.TotalCompliance[4,4])
 		self.Gxy = 1 / (2 * self.TotalCompliance[5,5])
-		self.Nuxy = self.TotalCompliance[0,1] * -self.Exx
-		self.Nuxz = self.TotalCompliance[0,2] * -self.Exx
-		self.Nuyz = self.TotalCompliance[1,3] * -self.Eyy
+		self.Nuxy = self.TotalCompliance[0,1] * (- self.Eyy)
+		self.Nuxz = self.TotalCompliance[0,2] * (- self.Ezz)
+		self.Nuyz = self.TotalCompliance[1,2] * (- self.Ezz)
 		self.Etaxs = self.TotalCompliance[0,5] * self.Exx
 		self.Etays = self.TotalCompliance[1,5] * self.Eyy
 		self.Etazs = self.TotalCompliance[2,5] * self.Ezz
@@ -138,9 +139,9 @@ class PlateLaminate():
 
 	def __str__(self):
 		output = '==PLATE LAMINATE PROPERTES== \n'
-		output += ('E_xx={Exx:g}  E_yy={Eyy:g}  E_zz={Ezz:g}\n').format(Exx=self.Exx, Eyy=self.Eyy, Ezz=self.Ezz)
+		output += ('E_xx={Exx:.3e}  E_yy={Eyy:.3e}  E_zz={Ezz:.3e}\n').format(Exx=self.Exx, Eyy=self.Eyy, Ezz=self.Ezz)
 		output += ('nu_xy={Nuxy:.3g}  nu_xz={Nuxz:.3g}  nu_yz={Nuyz:.3g}\n').format(Nuxy=self.Nuxy, Nuxz=self.Nuxz, Nuyz=self.Nuyz)
-		output += ('G_xy={Gxy:g}  G_xz={Gxz:g}  G_yz={Gyz:g}\n').format(Gxy=self.Gxy, Gxz=self.Gxz, Gyz=self.Gyz)
+		output += ('G_xy={Gxy:.3e}  G_xz={Gxz:.3e}  G_yz={Gyz:.3e}\n').format(Gxy=self.Gxy, Gxz=self.Gxz, Gyz=self.Gyz)
 		output += ('eta_xs={Etaxs:g}  eta_ys={Etays:g}  eta_zs={Etazs:g}\n').format(Etaxs=self.Etaxs, Etays=self.Etays, Etazs=self.Etazs)
 		output += ('eta_rt={Etart:g}\n').format(Etart=self.Etart)
 
@@ -148,7 +149,7 @@ class PlateLaminate():
 
 
 	def verboseString(self):
-		np.set_printoptions(precision=5)
+		np.set_printoptions(precision=3)
 		output = str(self)
 		output += 'Laminate C_xyz =\n'+str(self.TotalCompliance)+'\n'
 		output += '\n\n--PLY PROPERTIES--\n'

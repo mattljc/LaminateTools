@@ -5,15 +5,15 @@
 	<materialProps name="AGP370-3501-6s-5HS" E11="11.2e6" E22="10.9e6" E33="2.0e6" nu12="0.06" nu13="0.50" nu23="0.37" G12="0.94e6" G13="0.74e6" G23="0.59e6" CPT="0.012" arealDensity="0.058"/>
 	<materialProps name="Kevlar49-Epoxy-UNI" E11="11.6e6" E22="0.8e6" E33="0.8e6" nu12="0.34" nu13="0.34" nu23="0.40" G12="0.31e6" G13="0.31e6" G23="0.26e6" CPT="0.006" arealDensity="0.05"/>
 
-	<plybook name="CarbonUni-Test" n_count="1" sym="False">
+	<plybook name="CarbonUni-Test" n_count="1" sym="0">
 		<ply material="AS4-3501-6-UNI" orientation="0" thickness="0.006" />
 	</plybook>
 
-	<plybook name="KevlarUni-Test-Rotated90" n_count="1" sym="False">
+	<plybook name="KevlarUni-Test-Rotated90" n_count="1" sym="0">
 		<ply material="Kevlar49-Epoxy-UNI" orientation="90" thickness="0.006" />
 	</plybook>
 
-	<plybook name="BigStack-Test" n_count="3" sym="True">
+	<plybook name="BigStack-Test" n_count="3" sym="1">
 		<ply material="AGP370-3501-6s-5HS" orientation="-45" thickness="0.010" />
 		<ply material="AGP370-3501-6s-5HS" orientation="45" thickness="0.010" />
 	</plybook>

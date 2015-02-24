@@ -30,7 +30,7 @@ def fromXML(laminate_file=None):
 	for plybook in root.findall('plybook'):
 		lamName = plybook.attrib['name']
 		n_count = int(plybook.attrib['n_count'])
-		sym = bool(plybook.attrib['sym'])
+		sym = bool(int(plybook.attrib['sym']))
 		ply_stack = list()
 		for ply in plybook.findall('ply'):
 			material = Material_Dict[ply.attrib['material']]
