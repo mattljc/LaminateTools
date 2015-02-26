@@ -28,12 +28,7 @@ class RealCompositeMaterial():
 
 # Save these two for a later day
 
-class UnidirectionalFabric(RealCompositeMaterial):
-
-	def __init__(self):
-		self.Name = 'name'
-
-class PlainWeaveFabric(RealCompositeMaterial):
+class Composite2D(RealCompositeMaterial):
 
 	def __init__(self):
 		self.Name = 'name'

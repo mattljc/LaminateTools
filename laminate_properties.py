@@ -74,23 +74,23 @@ class PlateLaminate():
 		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
 
 		for ply in self.laminate.PlyStack:
-			e11 = ply.Material.E11
-			e22 = ply.Material.E22
-			e33 = ply.Material.E33
-			nu12 = ply.Material.Nu12
-			nu13 = ply.Material.Nu13
-			nu23 = ply.Material.Nu23
-			g12 = ply.Material.G12
-			g13 = ply.Material.G13
-			g23 = ply.Material.G23
+			s11 = 1/ply.Material.E11
+			s22 = 1/ply.Material.E22
+			s33 = 1/ply.Material.E33
+			s12 = -ply.Material.Nu12/ply.Material.E11
+			s13 = -ply.Material.Nu13/ply.Material.E11
+			s23 = -ply.Material.Nu23/ply.Material.E22
+			s66 = 1/(2*ply.Material.G12)
+			s55 = 1/(2*ply.Material.G13)
+			s44 = 1/(2*ply.Material.G23)
 
 			plyCompliance = np.matrix([ \
-			[1/e11    , -nu12/e22, -nu13/e33, 0        , 0        , 0        ], \
-			[-nu12/e11, 1/e22    , -nu23/e33, 0        , 0        , 0        ], \
-			[-nu13/e11, -nu23/e22, 1/e33    , 0        , 0        , 0        ], \
-			[0        , 0        , 0        , 1/(2*g23), 0        , 0        ], \
-			[0        , 0        , 0        , 0        , 1/(2*g13), 0        ], \
-			[0        , 0        , 0        , 0        , 0        , 1/(2*g23)]])
+			[s11, s12, s13, 0  , 0  , 0  ], \
+			[s12, s22, s23, 0  , 0  , 0  ], \
+			[s13, s23, s33, 0  , 0  , 0  ], \
+			[0  , 0  , 0  , s44, 0  , 0  ], \
+			[0  , 0  , 0  , 0  , s55, 0  ], \
+			[0  , 0  , 0  , 0  , 0  , s66]])
 
 			ply.GlobalCompliance = ply.Tinv * plyCompliance * ply.T
 			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
@@ -129,9 +129,9 @@ class PlateLaminate():
 		self.Gyz = 1 / (2 * self.TotalCompliance[3,3])
 		self.Gxz = 1 / (2 * self.TotalCompliance[4,4])
 		self.Gxy = 1 / (2 * self.TotalCompliance[5,5])
-		self.Nuxy = self.TotalCompliance[0,1] * (- self.Eyy)
-		self.Nuxz = self.TotalCompliance[0,2] * (- self.Ezz)
-		self.Nuyz = self.TotalCompliance[1,2] * (- self.Ezz)
+		self.Nuxy = self.TotalCompliance[0,1] * (- self.Exx)
+		self.Nuxz = self.TotalCompliance[0,2] * (- self.Exx)
+		self.Nuyz = self.TotalCompliance[1,2] * (- self.Eyy)
 		self.Etaxs = self.TotalCompliance[0,5] * self.Exx
 		self.Etays = self.TotalCompliance[1,5] * self.Eyy
 		self.Etazs = self.TotalCompliance[2,5] * self.Ezz

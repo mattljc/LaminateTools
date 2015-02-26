@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<platelaminate>
+
+	<materialProps name="ClassMat-1" E11="6.0e6" E22="1.5e6" E33="1.5e6" nu12="0.28" nu13="0.28" nu23="0.5" G12="6.2e5" G13="6.2e5" G23="5.0e5" CPT="0.006" arealDensity="1"/>
+	<materialProps name="ClassMat-2" E11="20.0e6" E22="1.0e6" E33="1.0e6" nu12="0.3" nu13="0.3" nu23="0.4" G12="7.0e5" G13="7.0e5" G23="5.0e5" CPT="0.006" arealDensity="1"/>
+
+	<plybook name="InClassLaminate-1" n_count="1" sym="0">
+		<ply material="ClassMat-1" orientation="0" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="0" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="90" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="90" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-60" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-15" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="-15" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="30" thickness="0.006" />
+		<ply material="ClassMat-1" orientation="30" thickness="0.006" />
+	</plybook>
+
+	<plybook name="InClassLaminate-2" n_count="1" sym="0">
+		<ply material="ClassMat-2" orientation="15" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-15" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="90" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="45" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-30" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="-30" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="30" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="30" thickness="0.006" />
+		<ply material="ClassMat-2" orientation="60" thickness="0.006" />
+	</plybook>
+
+</platelaminate>
