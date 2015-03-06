@@ -4,7 +4,37 @@ from ply_stack import *
 
 # beware the size of machine epsilon.... np.finfo(float).eps
 
-class Laminate3D():
+class Laminate():
+	# Superclass containing all the useful overides and the basic constructor
+
+	def __init__(self):
+		# Constructor wants a Laminate type as its sole input.
+		assert isinstance(lam, Laminate)
+
+		# Make global properties common to all types
+		self.TotalThickness = 0
+		self.TotalArealDensity = 0
+		for ply in self.laminate.PlyStack:
+			self.TotalThickness += ply.Thickness
+			self.TotalArealDensity += ply.Material.ArealDensity
+
+	def __str__(self):
+		# Output basic results of the laminate. Ordered keys
+		output = "== "+self.__class__.__name__+" Properties =="
+		for key in sorted(self.__dict__.keys())
+			output += ("{property} = {val:.3e}\n").format(property=key, val=self.__dict__[key])
+		return output
+
+	def __repr__(self):
+		# Return all the building block representations
+		output = self.__class__.__name__ + '\n'
+		output += repr(self.Laminate)
+		return output
+
+	def verbose(self):
+
+
+class Laminate3D(Laminate):
 	# Calculates the laminate properties of a thick laminate, including out of plane properties.
 	# Define permutation matrix P to group inplane terms and its inverse, used extensively in analysis.
 	P = np.matrix([ \
@@ -17,23 +47,13 @@ class Laminate3D():
 	Pinv = P.I
 
 	def __init__(self, lam=None):
-		# Constructor wants a Laminate type as its sole input.
-		if isinstance(lam, Laminate):
-			self.laminate = lam
-		else:
-			raise TypeError('lam is not type Laminate')
+		# Call the super-constructor
+		self = Laminate(lam)
+		# This laminate analysis object will have TotalThickness and TotalArealDensity
 
 		# Must check that material definitions are compatable with 3d properties.
-		for ply in self.laminate
-			if not isintance(ply.Material, ContinuumMaterial):
-				raise TypeError('ply properties are not type ContinuumMaterial')
-
-		# Passed type checks by this point, sum thickness and areal densities
-		self.TotalThickness = 0
-		self.TotalArealDensity = 0
-		for ply in self.laminate.PlyStack:
-			self.TotalThickness += ply.Thickness
-			self.TotalArealDensity += ply.Material.ArealDensity
+		for ply in self.laminate:
+			assert isintance(ply.Material, ContinuumMaterial)
 
 		# Probably not great practice, but construction of this object automatically calls the necessary functions to generate properties.
 		self.getLaminateProperties()
@@ -75,36 +95,14 @@ class Laminate3D():
 			ply.T = T
 			ply.Tinv = T.I
 
-	def __buildHks(self):
-		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
-		# This really shouldn't be accessed by itself. Should be accessed as part of property calculations
-
-		for ply in self.laminate.PlyStack:
-			s11 = 1/ply.Material.E11
-			s22 = 1/ply.Material.E22
-			s33 = 1/ply.Material.E33
-			s12 = -ply.Material.Nu12/ply.Material.E11
-			s13 = -ply.Material.Nu13/ply.Material.E11
-			s23 = -ply.Material.Nu23/ply.Material.E22
-			s66 = 1/(2*ply.Material.G12)
-			s55 = 1/(2*ply.Material.G13)
-			s44 = 1/(2*ply.Material.G23)
-
-			plyCompliance = np.matrix([ \
-			[s11, s12, s13, 0  , 0  , 0  ], \
-			[s12, s22, s23, 0  , 0  , 0  ], \
-			[s13, s23, s33, 0  , 0  , 0  ], \
-			[0  , 0  , 0  , s44, 0  , 0  ], \
-			[0  , 0  , 0  , 0  , s55, 0  ], \
-			[0  , 0  , 0  , 0  , 0  , s66]])
-
-			ply.GlobalCompliance = ply.Tinv * plyCompliance * ply.T
-			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
-
 	def getLaminateProperties(self):
 		# Must call these functions first in this order.
 		self.__buildTks() # Makes ply transform matrix
-		self.__buildHks() # Makes ply transformed properties matrix
+
+		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
+		for ply in self.laminate.PlyStack:
+			ply.GlobalCompliance = ply.Tinv * ply.Material.Compliance * ply.T
+			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
 
 		# Build the A-matrix quadrants. See wiki for details of the math
 		able = np.matrix( np.zeros((3,3)) )
@@ -147,16 +145,6 @@ class Laminate3D():
 		self.Etazs = self.TotalCompliance[2,5] * self.Ezz
 		self.Etart = self.TotalCompliance[3,4] * 2 * self.Gxz
 
-	def __str__(self):
-		# This string output gets you where you need to go. Just spits out the properties in an easy to read way.
-		output = '==3D LAMINATE PROPERTES== \n'
-		output += ('E_xx={Exx:.3e}  E_yy={Eyy:.3e}  E_zz={Ezz:.3e}\n').format(Exx=self.Exx, Eyy=self.Eyy, Ezz=self.Ezz)
-		output += ('nu_xy={Nuxy:.3g}  nu_xz={Nuxz:.3g}  nu_yz={Nuyz:.3g}\n').format(Nuxy=self.Nuxy, Nuxz=self.Nuxz, Nuyz=self.Nuyz)
-		output += ('G_xy={Gxy:.3e}  G_xz={Gxz:.3e}  G_yz={Gyz:.3e}\n').format(Gxy=self.Gxy, Gxz=self.Gxz, Gyz=self.Gyz)
-		output += ('eta_xs={Etaxs:g}  eta_ys={Etays:g}  eta_zs={Etazs:g}\n').format(Etaxs=self.Etaxs, Etays=self.Etays, Etazs=self.Etazs)
-		output += ('eta_rt={Etart:g}\n').format(Etart=self.Etart)
-		return output
-
 	def verboseString(self):
 		# This output is a little more intense, spits out everything. Laminate properties and ply by ply compliance matrices
 		np.set_printoptions(precision=3)
@@ -173,25 +161,68 @@ class Laminate3D():
 			ct+=1
 		return output
 
-class Laminate2D():
+class Laminate2D(Laminate):
 
 	def __init__(self, lam=None):
-
-		# Constructor wants a Laminate type as its sole input.
-		if isinstance(lam, Laminate):
-			self.laminate = lam
-		else:
-			raise TypeError('lam is not type Laminate')
+		# Call the super-constructor
+		self = Laminate(lam)
 
 		# Must check that material definitions are compatable with 3d properties.
-		for ply in self.laminate
-			if not isintance(ply.Material, PlateMaterial):
-				raise TypeError('ply properties are not type ContinuumMaterial')
+		for ply in self.laminate.PlyStack:
+			assert isintance(ply.Material, PlateMaterial)
+
+	def getLaminateProperties(self):
+		# This analysis assumes a z-axis with zero at the tool surface
+		# Figure out the midplane ordinate
+		midplane = self.TotalThickness / 2
+
+		# Initialize A, B and D matrix
+		self.A = np.matrix( np.zeros((3,3)) )
+		self.B = np.matrix( np.zeros((3,3)) )
+		self.D = np.matrix( np.zeros((3,3)) )
+
+		#Initialize zBase
+		zLow = midplane
+
+		# Build global compliances ply by ply, then add to the A, B and D matrices
+		for ply in self.Laminate.PlyStack
+
+			zUp = abs(zLow - ply.Thickness)
+
+			c2 = np.cos(np.radians(2* ply.Orientation))
+			c4 = np.cos(np.radians(4* ply.Orientation))
+			s2 = np.sin(np.radians(2* ply.Orientation))
+			s4 = np.sin(np.radians(4* ply.Orientation))
+
+			q11 = ply.Material.U1 + c2*ply.Material.U2 + c4*ply.Material.U3
+			q12 = ply.Material.U4 + c4*ply.Material.U3
+			q16 = s2*ply.Material.U2/2 + s4*ply.Material.U3
+			q22 = ply.Material.U1 - c2*ply.Material.U2 + c4*ply.Material.U3
+			q26 = s2*ply.Material.U2/2 - s4*ply.Material.U3
+			q66 =
+
+			ply.GlobalCompliance = np.Matrix([
+			[q11, q12, q16], \
+			[q12, q22, q26], \
+			[q16, q26, q66]])
+
+			self.A += ply.GlobalCompliance * (zUp - zLow)
+			self.B += ply.GlobalCompliance * (zUp**2 - zLow**2) / 2
+			self.D += ply.GlobalCompliance * (zUp**3 - zLow**3) / 3
+
+			zLow = zUp
+
+	def getEffectiveProperties(self):
+		# Test that the laminate is symmetric, otherwise these calculations aren't valid
+		assert self.laminate.Symmetry == True
+
+		# Generate properties
+
 
 if __name__ == '__main__':
 	# Make a single ply laminate with 0deg orientation to test 3d properties. Output properties should be the same as
 	glassUni = RealCompositeMaterial(name='Glass Uni', E11_in=41e9, E22_in=10.4e9, E33_in=10.4e9, Nu12_in=0.28, Nu13_in=0.28, Nu23_in=0.50, G12_in=4.3e9, G13_in=4.3e9, G23_in=3.5e9, ArealDensity_in=1.97, CPT_in=1)
 	aPly = Ply(matl=glassUni, orient=90, thk=1)
 	thisLam = Laminate(plyBook=[aPly])
-	plate = PlateLaminate(lam=thisLam)
-	print(plate.verboseString())
+	thisPlate = Laminate3D(lam=thisLam)
+	print(thisPlate.verboseString())
