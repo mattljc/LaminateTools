@@ -1,6 +1,6 @@
 import numpy as np
 
-class CompositeMaterial():
+class CompositeMaterial(object):
 	# Superclass for all composite material types.
 	# The intent is to create a generic material superclass for class testing, along with fundamental functions.
 
@@ -70,7 +70,7 @@ class PlateMaterial(CompositeMaterial):
 		s22 = 1/self.E22
 		s66 = 1/self.G12
 
-		self.Compliance = np.Matrix([ \
+		self.Compliance = np.matrix([ \
 		[s11, s12, 0  ], \
 		[s12, s22, 0  ], \
 		[0  , 0  , s66]])

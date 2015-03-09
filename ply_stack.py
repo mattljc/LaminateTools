@@ -1,12 +1,12 @@
 from composite_materials import *
 
-class Laminate():
+class Laminate(object):
 	#
 	def __init__(self, plyBook=None, n_count=1, symmetry=False):
 		# Test type of plybook, test type of contents
 		assert isinstance(plyBook, list)
 		for thing in plyBook:
-			assert isinstance(thing, Ply):
+			assert isinstance(thing, Ply)
 
 		# Store symmetry, ncount and apply to ply stack
 		self.Symmetry = symmetry
@@ -27,18 +27,18 @@ class Laminate():
 	def __repr__(self):
 		output = '<plybook> \n'
 		for ply in self.PlyStack:
-			output += ('   '+ply.__repr__+'\n')
+			output += ('   '+ply.__repr__()+'\n')
 		output += '</plybook>'
 
 
-class Ply():
+class Ply(object):
 	#
 	def __init__(self, matl=None, orient=0, thk=None):
 		# Test material is appropriate type
 		assert isinstance(matl, CompositeMaterial)
 
 		self.Material = matl
-		
+
 		# Test ply thickness, use CPT from material if blank
 		if thk==None:
 			self.Thickness = self.Material.CPT
@@ -52,7 +52,7 @@ class Ply():
 		return output
 
 	def __repr__(self):
-		return str('<ply material=\"',str(self.Material),'\" orientation=\"',str(self.Orientation),'\" thickness=\"',str(self.Thickness),'\" />')
+		return str('<ply material=\"'+str(self.Material)+'\" orientation=\"'+str(self.Orientation)+'\" thickness=\"'+str(self.Thickness)+'\" />')
 
 # Self test code
 if __name__ == '__main__':
