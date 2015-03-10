@@ -67,14 +67,10 @@ class Laminate3D(LaminateProperties):
 
 		for ply in self.laminate.PlyStack:
 			m1 = np.cos(np.radians(ply.Orientation))
-			m2 = -np.sin(np.radians(ply.Orientation))
-			m3 = 0
+			m2 = -1* np.sin(np.radians(ply.Orientation))
 			n1 = np.sin(np.radians(ply.Orientation))
 			n2 = np.cos(np.radians(ply.Orientation))
-			n3 = 0
-			p1 = 0
-			p2 = 0
-			p3 = 1
+			#m3 = 0 n3 = 0 p1 = 0 p2 = 0 p3 = 1
 
 			#Simplified transform matrix for quickness and maybe accuracy
 			T = np.matrix([ \
@@ -83,7 +79,7 @@ class Laminate3D(LaminateProperties):
 			[0    , 0    , 1, 0 , 0 , 0          ], \
 			[0    , 0    , 0, n2, m2, 0          ], \
 			[0    , 0    , 0, n1, m1, 0          ], \
-			[m2*m1, n2*n1, 0, 0 , 0 , n1*m2+n2*m1]])
+			[m2*m1, n2*n1, 0, 0 , 0 , (n1*m2+n2*m1)]])
 
 			ply.T = T
 			ply.Tinv = T.I
@@ -108,6 +104,7 @@ class Laminate3D(LaminateProperties):
 			H_IS = np.matrix(ply.H[0:3,3:])
 			H_SI = np.matrix(ply.H[3:,0:3])
 			H_SS_inv = np.matrix(ply.H[3:,3:]).I
+
 			able += np.matrix(H_SS_inv * (ply.Thickness / self.TotalThickness))
 			baker += np.matrix(H_SS_inv * H_SI * (ply.Thickness / self.TotalThickness))
 			charlie += np.matrix(H_IS * H_SS_inv * (ply.Thickness / self.TotalThickness))
@@ -215,7 +212,6 @@ class Laminate2D(LaminateProperties):
 		self.Etaxs = effectiveCompliance[0,2] / effectiveCompliance[0,0]
 		self.Etays = effectiveCompliance[1,2] / effectiveCompliance[1,1]
 
-
 if __name__ == '__main__':
 	# 3D Properties: Test Cases:
 	# These use metric values for material properties
@@ -245,14 +241,15 @@ if __name__ == '__main__':
 	np.isclose(glassUni3D.G12,Rotated3D.Gxy,rtol=0.01) and \
 	np.isclose(glassUni3D.G13,Rotated3D.Gyz,rtol=0.01) and \
 	np.isclose(glassUni3D.G23,Rotated3D.Gxz,rtol=0.01) and \
-	np.isclose(glassUni3D.Nu12,Rotated3D.Nuxy,rtol=0.01) and \
+	np.isclose((glassUni3D.Nu12*glassUni3D.E22/glassUni3D.E11),Rotated3D.Nuxy,rtol=0.01) and \
 	np.isclose(glassUni3D.Nu13,Rotated3D.Nuyz,rtol=0.01) and \
 	np.isclose(glassUni3D.Nu23,Rotated3D.Nuxz,rtol=0.01)
-	# Nuxy is the only value off.
+	# Note that Nuxy is rotated so that Nuxy = Nu21 != Nu12, thus the comparison is to the Nu21 value calculated based on the symmetry of the compliance matrix. See wiki.
 
+	print('3D LAMINATE TEST RESULTS\n+++++++++++++++++++++++++++++++++++++++')
 	#print(NoRotation3D)
-	print(Rotated3D.verboseString())
-	print(Rotated3D)
+	#print(Rotated3D.verboseString())
+	#print(Rotated3D)
 	print('3D 1-ply, 0deg Pass? '+str(NoRotated3DTruth))
 	print('3D 1-ply, 90deg Pass? '+str(Rotated3DTruth))
 
@@ -261,7 +258,7 @@ if __name__ == '__main__':
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
 	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, ArealDensity_in=1.97, CPT_in=1)
 	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.0001524)
-	ply_2D_90 = Ply(matl=glassUni2D, orient=91, thk=0.0001524)
+	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.0001524)
 	lam_2D_0_S = Laminate(plyBook=[ply_2D_0], n_count=1, symmetry=True)
 	lam_2D_90_S = Laminate(plyBook=[ply_2D_90], n_count=1, symmetry=True)
 	# Need to generate a symetric 3D composite for comparison
@@ -286,6 +283,7 @@ if __name__ == '__main__':
 	np.isclose(Rotated2D.Gxy,Rotated2D3D.Gxy,rtol=0.01) and \
 	np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
 
+	print('\n2D LAMINATE TEST RESULTS\n+++++++++++++++++++++++++++++++++++++++')
 	#print(NoRotation2D)
 	#print(Rotated2D)
 	print('2D 1-ply, 0deg Pass? '+str(NoRotated2DTruth))
