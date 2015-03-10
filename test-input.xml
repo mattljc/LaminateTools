@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<platelaminate>
+<continuum>
 
 	<materialProps name="AS4-3501-6-UNI" E11="21.3e6" E22="1.5e6" E33="1.5e6" nu12="0.27" nu13="0.27" nu23="0.54" G12="1e6" G13="1e6" G23="0.54e6" CPT="0.006" arealDensity="0.058"/>
 	<materialProps name="AGP370-3501-6s-5HS" E11="11.2e6" E22="10.9e6" E33="2.0e6" nu12="0.06" nu13="0.50" nu23="0.37" G12="0.94e6" G13="0.74e6" G23="0.59e6" CPT="0.012" arealDensity="0.058"/>
@@ -18,4 +18,5 @@
 		<ply material="AGP370-3501-6s-5HS" orientation="45" thickness="0.010" />
 	</plybook>
 
-</platelaminate>
+</continuum>
+<!--other root types: plate, beam-->

@@ -53,14 +53,3 @@ class Ply(object):
 
 	def __repr__(self):
 		return str('<ply material=\"'+str(self.Material)+'\" orientation=\"'+str(self.Orientation)+'\" thickness=\"'+str(self.Thickness)+'\" />')
-
-# Self test code
-if __name__ == '__main__':
-
-	# These statements should all work.
-	fakeMaterial = CompositeMaterial(name='FakieCF', E11_in=1, E22_in=1, E33_in=1, Nu12_in=1, Nu13_in=1, Nu23_in=1, G12_in=1, G13_in=1, G23_in=1, ArealDensity_in=1, CPT_in=1)
-	fakePly = Ply(matl = fakeMaterial, orient=45)
-	fakeLaminate = Laminate([fakePly], n_count=5, symmetry=True)
-	print(str(fakeLaminate))
-
-	# These statements should not

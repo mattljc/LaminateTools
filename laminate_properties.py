@@ -21,6 +21,7 @@ class LaminateProperties(object):
 
 	def __str__(self):
 		# Output basic results of the laminate. Ordered keys
+		np.set_printoptions(precision=3, linewidth=128)
 		output = "== "+self.__class__.__name__+" Properties ==\n"
 		for key in sorted(self.__dict__.keys()):
 			output += (key+" = "+str(self.__dict__[key])+"\n")
@@ -66,24 +67,14 @@ class Laminate3D(LaminateProperties):
 
 		for ply in self.laminate.PlyStack:
 			m1 = np.cos(np.radians(ply.Orientation))
-			#m2 = np.cos(np.radians(orient+90))
 			m2 = -np.sin(np.radians(ply.Orientation))
 			m3 = 0
-			#n1 = np.cos(np.radians(90-orient))
 			n1 = np.sin(np.radians(ply.Orientation))
 			n2 = np.cos(np.radians(ply.Orientation))
 			n3 = 0
 			p1 = 0
 			p2 = 0
 			p3 = 1
-
-			#Full Transform matrix for reference
-			#T = np.matrix([[m1**2, n1**2, p1**2, 2*n1*p1, 2*m1*p1, 2*n1*m1], \
-			#               [m2**2, n2**2, p2**2, 2*n2*p2, 2*m2*p2, 2*n2*m2], \
-			#               [m3**2, n3**2, p3**2, 2*n3*p3, 2*m3*p3, 2*n3*m3], \
-			#               [m2*m3, n2*n3, p2*p3, n2*p3+n3*p2, m3*p2+m2*p3, n2*m3+n3*m2], \
-			#               [m1*m3, n1*n3, p1*p3, n1*p3+n3*p1, m1*p3+m3*p1, n1*m3+n3*m1], \
-			#               [m2*m1, n2*n1, p2*p1, n1*p2+n2*p1, m1*p2+m2*p1, n1*m2+n2*m1]])
 
 			#Simplified transform matrix for quickness and maybe accuracy
 			T = np.matrix([ \
@@ -106,11 +97,12 @@ class Laminate3D(LaminateProperties):
 			ply.GlobalCompliance = ply.Tinv * ply.Material.Compliance * ply.T
 			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
 
-		# Build the A-matrix quadrants. See wiki for details of the math
+		# Build the A-matrix quadrants. See wiki for details of the math source
 		able = np.matrix( np.zeros((3,3)) )
 		baker = np.matrix( np.zeros((3,3)) )
 		charlie = np.matrix( np.zeros((3,3)) )
 		dog = np.matrix( np.zeros((3,3)) )
+
 		for ply in self.laminate.PlyStack:
 			H_II = np.matrix(ply.H[0:3,0:3])
 			H_IS = np.matrix(ply.H[0:3,3:])
@@ -139,13 +131,13 @@ class Laminate3D(LaminateProperties):
 		self.Gyz = 1 / (2 * self.TotalCompliance[3,3])
 		self.Gxz = 1 / (2 * self.TotalCompliance[4,4])
 		self.Gxy = 1 / (2 * self.TotalCompliance[5,5])
-		self.Nuxy = self.TotalCompliance[0,1] * (- self.Exx)
-		self.Nuxz = self.TotalCompliance[0,2] * (- self.Exx)
-		self.Nuyz = self.TotalCompliance[1,2] * (- self.Eyy)
-		self.Etaxs = self.TotalCompliance[0,5] * self.Exx
-		self.Etays = self.TotalCompliance[1,5] * self.Eyy
-		self.Etazs = self.TotalCompliance[2,5] * self.Ezz
-		self.Etart = self.TotalCompliance[3,4] * 2 * self.Gxz
+		self.Nuxy = -self.TotalCompliance[1,0] / self.TotalCompliance[0,0]
+		self.Nuxz = -self.TotalCompliance[0,2] / self.TotalCompliance[0,0]
+		self.Nuyz = -self.TotalCompliance[1,2] / self.TotalCompliance[1,1]
+		self.Etaxs = self.TotalCompliance[0,5] / self.TotalCompliance[0,0]
+		self.Etays = self.TotalCompliance[1,5] / self.TotalCompliance[1,1]
+		self.Etazs = self.TotalCompliance[2,5] / self.TotalCompliance[2,2]
+		self.Etart = self.TotalCompliance[3,4] / (2 * self.TotalCompliance[4,4])
 
 	def verboseString(self):
 		# This output is a little more intense, spits out everything. Laminate properties and ply by ply compliance matrices
@@ -189,29 +181,24 @@ class Laminate2D(LaminateProperties):
 		# Build global compliances ply by ply, then add to the A, B and D matrices
 		for ply in self.laminate.PlyStack:
 
+			# Make ply transformation matrix
+			m = np.cos(np.radians(ply.Orientation))
+			n = np.sin(np.radians(ply.Orientation))
+			T = np.matrix([ \
+			[m**2, n**2, 2*m*n], \
+			[n**2, m**2,-2*m*n], \
+			[-m*n, m*n, (m**2-n**2)]])
+
+			# Transform stiffness into global coordinate system
+			ply.GlobalStiffness = T.I * ply.Material.Compliance.I * T
+
+			# Build A,B,D matrices
 			zUp = zLow + ply.Thickness
-			#print([zUp,zLow])
-			c2 = np.cos(np.radians(2.0* ply.Orientation))
-			c4 = np.cos(np.radians(4.0* ply.Orientation))
-			s2 = np.sin(np.radians(2.0* ply.Orientation))
-			s4 = np.sin(np.radians(4.0* ply.Orientation))
+			self.A += ply.GlobalStiffness * (zUp - zLow)
+			self.B += ply.GlobalStiffness * (zUp**2 - zLow**2) / 2
+			self.D += ply.GlobalStiffness * (zUp**3 - zLow**3) / 3
 
-			q11 = ply.Material.U1 + c2*ply.Material.U2 + c4*ply.Material.U3
-			q22 = ply.Material.U1 - c2*ply.Material.U2 + c4*ply.Material.U3
-			q12 = ply.Material.U4 - c4*ply.Material.U3
-			q66 = ply.Material.U5 - c4*ply.Material.U3
-			q16 = s2*ply.Material.U2/2 + s4*ply.Material.U3
-			q26 = s2*ply.Material.U2/2 - s4*ply.Material.U3
-
-			ply.GlobalCompliance = np.matrix([
-			[q11, q12, q16], \
-			[q12, q22, q26], \
-			[q16, q26, q66]])
-
-			self.A += ply.GlobalCompliance * (zUp - zLow)
-			self.B += ply.GlobalCompliance * (zUp**2 - zLow**2) / 2
-			self.D += ply.GlobalCompliance * (zUp**3 - zLow**3) / 3
-
+			# Increment Z
 			zLow = zUp
 
 	def getEffectiveProperties(self):
@@ -231,10 +218,11 @@ class Laminate2D(LaminateProperties):
 
 if __name__ == '__main__':
 	# 3D Properties: Test Cases:
+	# These use metric values for material properties
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
 	glassUni3D = ContinuumMaterial(name='Glass Uni', E11_in=41e9, E22_in=10.4e9, E33_in=10.4e9, Nu12_in=0.28, Nu13_in=0.28, Nu23_in=0.50, G12_in=4.3e9, G13_in=4.3e9, G23_in=3.5e9, ArealDensity_in=1.97, CPT_in=1)
-	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.006)
-	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.006)
+	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.0001524)
+	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.0001524)
 	lam_3D_0 = Laminate(plyBook=[ply_3D_0], n_count=1, symmetry=False)
 	lam_3D_90 = Laminate(plyBook=[ply_3D_90], n_count=1, symmetry=False)
 
@@ -257,22 +245,23 @@ if __name__ == '__main__':
 	np.isclose(glassUni3D.G12,Rotated3D.Gxy,rtol=0.01) and \
 	np.isclose(glassUni3D.G13,Rotated3D.Gyz,rtol=0.01) and \
 	np.isclose(glassUni3D.G23,Rotated3D.Gxz,rtol=0.01) and \
+	np.isclose(glassUni3D.Nu12,Rotated3D.Nuxy,rtol=0.01) and \
 	np.isclose(glassUni3D.Nu13,Rotated3D.Nuyz,rtol=0.01) and \
 	np.isclose(glassUni3D.Nu23,Rotated3D.Nuxz,rtol=0.01)
+	# Nuxy is the only value off.
 
-	#np.isclose(glassUni3D.Nu12,Rotated3D.Nuxy,rtol=0.01) and \
-	
+	#print(NoRotation3D)
+	print(Rotated3D.verboseString())
+	print(Rotated3D)
 	print('3D 1-ply, 0deg Pass? '+str(NoRotated3DTruth))
 	print('3D 1-ply, 90deg Pass? '+str(Rotated3DTruth))
-	print(NoRotation3D)
-	print(Rotated3D)
 
 	############################################################################
-	# 2D Properties
+	# 2D Properties: Test Cases:
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
 	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, ArealDensity_in=1.97, CPT_in=1)
-	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.006)
-	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.006)
+	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.0001524)
+	ply_2D_90 = Ply(matl=glassUni2D, orient=91, thk=0.0001524)
 	lam_2D_0_S = Laminate(plyBook=[ply_2D_0], n_count=1, symmetry=True)
 	lam_2D_90_S = Laminate(plyBook=[ply_2D_90], n_count=1, symmetry=True)
 	# Need to generate a symetric 3D composite for comparison
@@ -292,13 +281,12 @@ if __name__ == '__main__':
 	np.isclose(NoRotation2D.Gxy,NoRotation2D3D.Gxy,rtol=0.01) and \
 	np.isclose(NoRotation2D.Nuxy,NoRotation2D3D.Nuxy,rtol=0.01)
 
-	#Rotated2DTruth = np.isclose(Rotated2D.Exx,Rotated2D3D.Exx,rtol=0.01) and \
-	#np.isclose(Rotated2D.Eyy,Rotated2D3D.Eyy,rtol=0.01) and \
-	#np.isclose(Rotated2D.Gxy,Rotated2D3D.Gxy,rtol=0.01) and \
-	#np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
+	Rotated2DTruth = np.isclose(Rotated2D.Exx,Rotated2D3D.Exx,rtol=0.01) and \
+	np.isclose(Rotated2D.Eyy,Rotated2D3D.Eyy,rtol=0.01) and \
+	np.isclose(Rotated2D.Gxy,Rotated2D3D.Gxy,rtol=0.01) and \
+	np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
 
 	#print(NoRotation2D)
-	#print(NoRotation2D3D)
-
-	#print('2D 1-ply, 0deg Pass? '+str(NoRotated2DTruth))
-	#print('2D 1-ply, 90deg Pass? '+str(Rotated2DTruth))
+	#print(Rotated2D)
+	print('2D 1-ply, 0deg Pass? '+str(NoRotated2DTruth))
+	print('2D 1-ply, 90deg Pass? '+str(Rotated2DTruth))
