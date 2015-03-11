@@ -27,7 +27,7 @@ def fromXML(laminate_file=None):
 			G23 = float(material.attrib["G23"])
 			CPT = float(material.attrib["CPT"])
 			arealDens = float(material.attrib["arealDensity"])
-			Material_Dict.update({matlName : ContinuumMaterial(name=matlName, E11_in=E11, E22_in=E22, E33_in=E33, Nu12_in=nu12, Nu13_in=nu13, Nu23_in=nu23, G12_in=G12, G13_in=G13, G23_in=G23, ArealDensity_in=arealDens, CPT=0)})
+			Material_Dict.update({matlName : ContinuumMaterial(name=matlName, E11_in=E11, E22_in=E22, E33_in=E33, Nu12_in=nu12, Nu13_in=nu13, Nu23_in=nu23, G12_in=G12, G13_in=G13, G23_in=G23, ArealDensity_in=arealDens, CPT_in=CPT)})
 
 	elif (root.tag == 'plate'):
 		# A plate analysis with appropriate materials
