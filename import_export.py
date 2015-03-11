@@ -59,9 +59,11 @@ def fromXML(laminate_file=None):
 			thickness = float(ply.attrib['thickness'])
 			ply_stack.append(Ply(material,orientation,thickness))
 		Laminate_Dict.update({lamName:Laminate(copy.deepcopy(ply_stack),n_count,sym)})
-	return {'mats':Material_Dict, 'lams':Laminate_Dict}
 
-def toXML(lamProps, properties_file=None):
+	return {'type':root.tag, 'mats':Material_Dict, 'lams':Laminate_Dict}
+
+def toXML(lamProps, properties_file='laminate.xml'):
+	# Outputs the implementable details of a laminate with its properties written in a comment
 
 	return None
 
@@ -71,8 +73,10 @@ def toText(lamProps, properties_file='laminate_properties.txt'):
 	file.write(lamProps.__repr__())
 	file.close()
 
-def toNASTRAN(type = 'MAT9', properties_file='laminate_properties.mat9'):
+def toNASTRAN(type='continuum', properties_file='laminate_properties.mat9'):
+	# Determines the appropriate material property deck to use and outputs the appropriate NASTRAN data file
 	return None
 
-def toABAQUS(properties_file=None):
+def toABAQUS(type='continuum',properties_file='laminate_properties.ipt'):
+	# Determines the appropriate material property deck to use and outputs the appropriate ABAQUS/Simulia data file
 	return None

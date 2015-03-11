@@ -52,6 +52,12 @@ class ContinuumMaterial(CompositeMaterial):
 		[0  , 0  , 0  , 0  , s55, 0  ], \
 		[0  , 0  , 0  , 0  , 0  , s66]])
 
+	def __repr__(self):
+		# Overiding until I can figure out a nice generalized way to do this -mljc
+		output = ('E11={e11:.3e} E22={e22:.3e} E33={e33:.3e} Nu12={nu12:.3g} Nu13={nu13:.3g} Nu23={nu23:.3g} G12={g12:.3e} G13={g13:.3e} G23={g23:.3e} ArealDensity={dens:.3g} CPT={cpt:.3g}').format(\
+		e11=self.E11,e22=self.E22,e33=self.E33,nu12=self.Nu12,nu13=self.Nu13,nu23=self.Nu23,g12=self.G12,g13=self.G13,g23=self.G23,dens=self.ArealDensity,cpt=self.CPT)
+		return output
+
 class PlateMaterial(CompositeMaterial):
 	# Defines a plate material for use in classic lamination theory. See wiki for where this type is appropriate.
 
@@ -81,3 +87,9 @@ class PlateMaterial(CompositeMaterial):
 		self.U3 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 - Q[2,2]/2
 		self.U4 = (Q[0,0] + Q[1,1])/8 + 3*Q[0,1]/4 - Q[2,2]/2
 		self.U5 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 + Q[2,2]/2
+
+	def __repr__(self):
+		# Overiding until I can figure out a nice generalized way to do this -mljc
+		output = ('E11={e11:.3e} E22={e22:.3e} Nu12={nu12:.3g} G12={g12:.3e} ArealDensity={dens:.3g} CPT={cpt:.3g}').format(\
+		e11=self.E11,e22=self.E22,nu12=self.Nu12,g12=self.G12,dens=self.ArealDensity,cpt=self.CPT)
+		return output

@@ -25,13 +25,12 @@ class LaminateProperties(object):
 		output = "== "+self.__class__.__name__+" Properties ==\n"
 		for key in sorted(self.__dict__.keys()):
 			output += (key+" = "+str(self.__dict__[key])+"\n")
-			#output += ("{property} = {val:.3e}\n").format(property=key, val=self.__dict__[key])
 		return output
 
 	def __repr__(self):
 		# Return all the building block representations
-		output = self.__class__.__name__ + '\n'
-		output += repr(self.Laminate)
+		output = '=='+self.__class__.__name__ +'==\n'
+		output += repr(self.laminate)
 		return output
 
 	def verbose(self):

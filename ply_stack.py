@@ -20,15 +20,16 @@ class Laminate(object):
 		plyNumber = 1
 		output = str()
 		for ply in self.PlyStack:
-			output = output+('Ply #'+str(plyNumber)+' > '+str(ply)+'\n')
+			output = output+('(#'+str(plyNumber)+'>'+str(ply)+') / ')
 			plyNumber += 1
 		return output
 
 	def __repr__(self):
-		output = '<plybook> \n'
+		output  = '    --Laminate--\n'
+		output += '    symmetry? '+str(self.Symmetry)+'\n'
 		for ply in self.PlyStack:
-			output += ('   '+ply.__repr__()+'\n')
-		output += '</plybook>'
+			output += ply.__repr__()+'\n'
+		return output
 
 
 class Ply(object):
@@ -48,8 +49,12 @@ class Ply(object):
 		self.Orientation = orient
 
 	def __str__(self):
-		output = (str(self.Material)+' orient='+str(self.Orientation)+' thickness='+str(self.Thickness))
+		output = (str(self.Material)+' orient='+str(self.Orientation)+' thk='+str(self.Thickness))
 		return output
 
 	def __repr__(self):
-		return str('<ply material=\"'+str(self.Material)+'\" orientation=\"'+str(self.Orientation)+'\" thickness=\"'+str(self.Thickness)+'\" />')
+		output  = '        --Ply--\n'
+		output += '        material = '+self.Material.__repr__()+'\n'
+		output += '        orientation = '+str(self.Orientation)+'\n'
+		output += '        thickness = '+str(self.Thickness)
+		return output

@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<continuum>
+
+	<materialProps name="AS4-3501-6-UNI" E11="21.3e6" E22="1.5e6" E33="1.5e6" nu12="0.27" nu13="0.27" nu23="0.54" G12="1e6" G13="1e6" G23="0.54e6" CPT="0.006" arealDensity="0.058"/>
+	<materialProps name="InClass1" E11="6e6" E22="1.5e6" E33="1.5e6" nu12="0.28" nu13="0.28" nu23="0.5" G12="6.2e5" G13="6.2e5" G23="5.0e5" CPT="0.006" arealDensity="0.05"/>
+	<materialProps name="InClass2" E11="20e6" E22="1e6" E33="1e6" nu12="0.3" nu13="0.3" nu23="0.4" G12="0.7e6" G13="0.7e6" G23="0.5e6" CPT="0.006" arealDensity="0.05"/>
+
+	<plybook name="No-Rotation-Test" n_count="1" sym="0">
+		<ply material="AS4-3501-6-UNI" orientation="0" thickness="0.006" />
+	</plybook>
+
+	<plybook name="90Deg-Rotation-Test" n_count="1" sym="0">
+		<ply material="AS4-3501-6-UNI" orientation="90" thickness="0.006" />
+	</plybook>
+
+	<plybook name="InClassLaminate-Test1" n_count="1" sym="0">
+		<ply material="InClass1" orientation="0" thickness="0.006" />
+		<ply material="InClass1" orientation="0" thickness="0.006" />
+		<ply material="InClass1" orientation="45" thickness="0.006" />
+		<ply material="InClass1" orientation="45" thickness="0.006" />
+		<ply material="InClass1" orientation="45" thickness="0.006" />
+		<ply material="InClass1" orientation="-45" thickness="0.006" />
+		<ply material="InClass1" orientation="-45" thickness="0.006" />
+		<ply material="InClass1" orientation="-45" thickness="0.006" />
+		<ply material="InClass1" orientation="90" thickness="0.006" />
+		<ply material="InClass1" orientation="90" thickness="0.006" />
+		<ply material="InClass1" orientation="60" thickness="0.006" />
+		<ply material="InClass1" orientation="60" thickness="0.006" />
+		<ply material="InClass1" orientation="60" thickness="0.006" />
+		<ply material="InClass1" orientation="60" thickness="0.006" />
+		<ply material="InClass1" orientation="-60" thickness="0.006" />
+		<ply material="InClass1" orientation="-60" thickness="0.006" />
+		<ply material="InClass1" orientation="-60" thickness="0.006" />
+		<ply material="InClass1" orientation="-60" thickness="0.006" />
+		<ply material="InClass1" orientation="-15" thickness="0.006" />
+		<ply material="InClass1" orientation="-15" thickness="0.006" />
+		<ply material="InClass1" orientation="30" thickness="0.006" />
+		<ply material="InClass1" orientation="30" thickness="0.006" />
+	</plybook>
+
+	<plybook name="InClassLaminate-Test2" n_count="1" sym="0">
+		<ply material="InClass2" orientation="15" thickness="0.006" />
+		<ply material="InClass2" orientation="-15" thickness="0.006" />
+		<ply material="InClass2" orientation="90" thickness="0.006" />
+		<ply material="InClass2" orientation="-45" thickness="0.006" />
+		<ply material="InClass2" orientation="-45" thickness="0.006" />
+		<ply material="InClass2" orientation="-45" thickness="0.006" />
+		<ply material="InClass2" orientation="45" thickness="0.006" />
+		<ply material="InClass2" orientation="45" thickness="0.006" />
+		<ply material="InClass2" orientation="45" thickness="0.006" />
+		<ply material="InClass2" orientation="-30" thickness="0.006" />
+		<ply material="InClass2" orientation="-30" thickness="0.006" />
+		<ply material="InClass2" orientation="30" thickness="0.006" />
+		<ply material="InClass2" orientation="30" thickness="0.006" />
+		<ply material="InClass2" orientation="60" thickness="0.006" />
+	</plybook>
+
+</continuum>
+<!--other root types: plate, beam-->
+
+<!-- Validation Results -->
+<!-- No-Rotation-Test: Exx= Eyy= Ezz= Nuxy= Nuxz= Nuyz= Gxy= Gxz= Gyz= -->
+<!-- 90Deg-Rotation-Test: Exx= Eyy= Ezz= Nuxy= Nuxz= Nuyz= Gxy= Gxz= Gyz= -->
+<!-- InClassLaminate-Test1: Exx=2626251 Eyy=2857416 Ezz=1728961 Nuxy=0.34051 Nuxz=0.31998 Nuyz=0.29768 Gxy=1305495 Gxz=550174 Gyz=557011 -->
+<!-- InClassLaminate-Test2: Exx=6662944 Eyy=4334362 Ezz=1156379 Nuxy=0.61361 Nuxz=0.16203 Nuyz=0.24703 Gxy=3904387 Gxz=599257 Gyz=568234 -->

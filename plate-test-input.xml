@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<plate>
+
+	<materialProps name="AS4-8552-UNI" E11="19.09e6" E22="1.34e6" nu12="0.302" G12="0.7e6" CPT="0.0074" arealDensity="0.0004"/>
+
+	<plybook name="No-Rotation-Test" n_count="1" sym="1">
+		<ply material="AS4-8552-UNI" orientation="0" thickness="0.006" />
+	</plybook>
+
+	<plybook name="90Deg-Rotation-Test" n_count="1" sym="1">
+		<ply material="AS4-8552-UNI" orientation="90" thickness="0.006" />
+	</plybook>
+
+</plate>
+<!--available root types: continuum, plate, beam-->
