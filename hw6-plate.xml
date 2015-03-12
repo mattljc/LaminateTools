@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<plate>
+	<materialProps name="HW6-matl" E11="20e6" E22="1e6" nu12="0.3" G12="0.7e6" CPT="0.006" arealDensity="0.058"/>
+
+	<plybook name="HW6-2d-Properties" n_count="1" sym="1">
+		<ply material="HW6-matl" orientation="0" thickness="0.006" />
+		<ply material="HW6-matl" orientation="90" thickness="0.006" />
+		<ply material="HW6-matl" orientation="-45" thickness="0.006" />
+		<ply material="HW6-matl" orientation="45" thickness="0.006" />
+		<ply material="HW6-matl" orientation="60" thickness="0.006" />
+		<ply material="HW6-matl" orientation="-60" thickness="0.006" />
+		<ply material="HW6-matl" orientation="30" thickness="0.006" />
+	</plybook>
+</plate>

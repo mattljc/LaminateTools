@@ -21,7 +21,7 @@ class LaminateProperties(object):
 
 	def __str__(self):
 		# Output basic results of the laminate. Ordered keys
-		np.set_printoptions(precision=3, linewidth=128)
+		np.set_printoptions(precision=3, linewidth=128, suppress=True)
 		output = "== "+self.__class__.__name__+" Properties ==\n"
 		for key in sorted(self.__dict__.keys()):
 			output += (key+" = "+str(self.__dict__[key])+"\n")
@@ -110,13 +110,15 @@ class Laminate3D(LaminateProperties):
 			dog += np.matrix((H_II - H_IS * H_SS_inv * H_SI) * (ply.Thickness / self.TotalThickness))
 
 		# Collect the global compliance terms from the A-matrix quadrants
-		self.TotalCompliance = np.matrix( np.zeros((6,6)) )
-		self.TotalCompliance[0:3,0:3] = dog + charlie * able.I * baker #A_II
-		self.TotalCompliance[0:3,3:] = charlie * able.I #A_IS
-		self.TotalCompliance[3:,0:3] = able.I * baker #A_SI
-		self.TotalCompliance[3:,3:] = able.I #A_SS
+		self.TotalStiffness = np.matrix( np.zeros((6,6)) )
+		self.TotalStiffness[0:3,0:3] = dog + charlie * able.I * baker #A_II
+		self.TotalStiffness[0:3,3:] = charlie * able.I #A_IS
+		self.TotalStiffness[3:,0:3] = able.I * baker #A_SI
+		self.TotalStiffness[3:,3:] = able.I #A_SS
 
-		self.TotalCompliance = self.P * self.TotalCompliance.I * self.Pinv
+		self.TotalCompliance = self.P * self.TotalStiffness.I * self.Pinv
+		self.TotalStiffness = self.P * self.TotalStiffness * self.Pinv
+
 		# Use this line if the size of machine epsilon on your machine is problematic
 		#self.TotalCompliance = np.matrix(self.TotalCompliance.round(16))
 
@@ -178,15 +180,38 @@ class Laminate2D(LaminateProperties):
 		for ply in self.laminate.PlyStack:
 
 			# Make ply transformation matrix
-			m = np.cos(np.radians(ply.Orientation))
-			n = np.sin(np.radians(ply.Orientation))
-			T = np.matrix([ \
-			[m**2, n**2, 2*m*n], \
-			[n**2, m**2,-2*m*n], \
-			[-m*n, m*n, (m**2-n**2)]])
+			#m = np.cos(np.radians(ply.Orientation))
+			#n = np.sin(np.radians(ply.Orientation))
+			#T = np.matrix([ \
+			#[m**2, n**2, 2*m*n], \
+			#[n**2, m**2,-2*m*n], \
+			#[-m*n, m*n, (m**2-n**2)]])
 
 			# Transform stiffness into global coordinate system
-			ply.GlobalStiffness = T.I * ply.Material.Compliance.I * T
+			#ply.GlobalStiffness = T.I * ply.Material.Compliance.I * T
+
+			# Use invariant method to ensure symetry of the final result.
+			u1 = ply.Material.U1
+			u2 = ply.Material.U2
+			u3 = ply.Material.U3
+			u4 = ply.Material.U4
+			u5 = ply.Material.U5
+			c4 = np.cos(4 * np.radians(ply.Orientation))
+			c2 = np.cos(2 * np.radians(ply.Orientation))
+			s4 = np.sin(4 * np.radians(ply.Orientation))
+			s2 = np.sin(2 * np.radians(ply.Orientation))
+
+			Q11 = u1 + u2*c2 + u3*c4
+			Q22 = u1 - u2*c2 + u3*c4
+			Q12 = u4 - u3*c4
+			Q66 = u5 - u3*c4
+			Q16 = u2*s2/2 + u3*s4
+			Q26 = u2*s2/2 - u3*s4
+
+			ply.GlobalStiffness = np.matrix([
+			[Q11, Q12, Q16], \
+			[Q12, Q22, Q26], \
+			[Q16, Q26, Q66]])
 
 			# Build A,B,D matrices
 			zUp = zLow + ply.Thickness

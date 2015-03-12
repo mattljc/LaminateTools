@@ -20,7 +20,7 @@ class Laminate(object):
 		plyNumber = 1
 		output = str()
 		for ply in self.PlyStack:
-			output = output+('(#'+str(plyNumber)+'>'+str(ply)+') / ')
+			output = output+('(#'+str(plyNumber)+'>'+str(ply)+') \n ')
 			plyNumber += 1
 		return output
 
