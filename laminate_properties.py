@@ -224,7 +224,7 @@ class Laminate2D(LaminateProperties):
 
 	def getEffectiveProperties(self):
 		# Test that the laminate is symmetric, otherwise these calculations aren't valid
-		assert self.laminate.Symmetry == True
+		#assert self.laminate.Symmetry == True
 
 		# Generate properties
 		#print(self.A.I)

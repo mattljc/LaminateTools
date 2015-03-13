@@ -2,7 +2,7 @@
 <continuum>
 	<materialProps name="HW6-matl" E11="20e6" E22="1e6" E33="1e6" nu12="0.3" nu13="0.4" nu23="0.4" G12="0.7e6" G13="0.7e6" G23="0.5e6" CPT="0.006" arealDensity="0.058"/>
 
-	<plybook name="HW6-3d-Properties" n_count="1" sym="1">
+	<plybook name="HW6-3d-Properties" n_count="1" sym="0">
 		<ply material="HW6-matl" orientation="0" thickness="0.006" />
 		<ply material="HW6-matl" orientation="90" thickness="0.006" />
 		<ply material="HW6-matl" orientation="-45" thickness="0.006" />
