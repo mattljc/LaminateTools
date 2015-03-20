@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from composite_materials import *
 from ply_stack import *
 
@@ -137,6 +138,8 @@ class Laminate3D(LaminateProperties):
 		self.Etazs = self.TotalCompliance[2,5] / self.TotalCompliance[2,2]
 		self.Etart = self.TotalCompliance[3,4] / (2 * self.TotalCompliance[4,4])
 
+		# NEED: Implementation for 3d CTE
+
 	def verboseString(self):
 		# This output is a little more intense, spits out everything. Laminate properties and ply by ply compliance matrices
 		np.set_printoptions(precision=3)
@@ -172,24 +175,14 @@ class Laminate2D(LaminateProperties):
 		self.A = np.matrix( np.zeros((3,3)) )
 		self.B = np.matrix( np.zeros((3,3)) )
 		self.D = np.matrix( np.zeros((3,3)) )
+		self.specificNT = np.matrix( np.zeros((3,1)) )
 
 		#Initialize zBase
 		zLow = -self.TotalThickness / 2
 
 		# Build global compliances ply by ply, then add to the A, B and D matrices
 		for ply in self.laminate.PlyStack:
-
-			# Make ply transformation matrix
-			#m = np.cos(np.radians(ply.Orientation))
-			#n = np.sin(np.radians(ply.Orientation))
-			#T = np.matrix([ \
-			#[m**2, n**2, 2*m*n], \
-			#[n**2, m**2,-2*m*n], \
-			#[-m*n, m*n, (m**2-n**2)]])
-
-			# Transform stiffness into global coordinate system
-			#ply.GlobalStiffness = T.I * ply.Material.Compliance.I * T
-
+			# Build ply stiffness and CTE in global coordinates
 			# Use invariant method to ensure symetry of the final result.
 			u1 = ply.Material.U1
 			u2 = ply.Material.U2
@@ -198,8 +191,10 @@ class Laminate2D(LaminateProperties):
 			u5 = ply.Material.U5
 			c4 = np.cos(4 * np.radians(ply.Orientation))
 			c2 = np.cos(2 * np.radians(ply.Orientation))
+			c1 = np.cos(1 * np.radians(ply.Orientation))
 			s4 = np.sin(4 * np.radians(ply.Orientation))
 			s2 = np.sin(2 * np.radians(ply.Orientation))
+			s1 = np.sin(1 * np.radians(ply.Orientation))
 
 			Q11 = u1 + u2*c2 + u3*c4
 			Q22 = u1 - u2*c2 + u3*c4
@@ -208,16 +203,23 @@ class Laminate2D(LaminateProperties):
 			Q16 = u2*s2/2 + u3*s4
 			Q26 = u2*s2/2 - u3*s4
 
+			ax = ply.Material.a1*c1**2 + ply.Material.a2*s1**2
+			ay = ply.Material.a1*s1**2 + ply.Material.a2*c1**2
+			axy = (ply.Material.a2-ply.Material.a1)*c1*s1
+
 			ply.GlobalStiffness = np.matrix([
 			[Q11, Q12, Q16], \
 			[Q12, Q22, Q26], \
 			[Q16, Q26, Q66]])
+
+			ply.GlobalCTE = np.matrix([[ax],[ay],[axy]])
 
 			# Build A,B,D matrices
 			zUp = zLow + ply.Thickness
 			self.A += ply.GlobalStiffness * (zUp - zLow)
 			self.B += ply.GlobalStiffness * (zUp**2 - zLow**2) / 2
 			self.D += ply.GlobalStiffness * (zUp**3 - zLow**3) / 3
+			self.specificNT += ply.GlobalStiffness * ply.GlobalCTE * (zUp - zLow)
 
 			# Increment Z
 			zLow = zUp
@@ -226,23 +228,32 @@ class Laminate2D(LaminateProperties):
 		# Test that the laminate is symmetric, otherwise these calculations aren't valid
 		#assert self.laminate.Symmetry == True
 
+		# Report a soft warining if an asymmetric laminate is given. This is not strictly valid, but effective properties are extremely useful for informed WAGing. Thus we should at least warn the user about what they're doing.
+		if (not self.laminate.Symmetry):
+			warnings.warn('Laminate is not symmetric. Effective properties may not be valid.', stacklevel=2)
+
 		# Generate properties
 		#print(self.A.I)
-		effectiveCompliance = self.A.I
-		self.Exx = 1 / (effectiveCompliance[0,0] * self.TotalThickness)
-		self.Eyy = 1 / (effectiveCompliance[1,1] * self.TotalThickness)
-		self.Gxy = 1 / (effectiveCompliance[2,2] * self.TotalThickness)
-		self.Nuxy = - effectiveCompliance[0,1] / effectiveCompliance[0,0]
-		self.Etaxs = effectiveCompliance[0,2] / effectiveCompliance[0,0]
-		self.Etays = effectiveCompliance[1,2] / effectiveCompliance[1,1]
+		self.effectiveCompliance = self.A.I
+		self.Exx = 1 / (self.effectiveCompliance[0,0] * self.TotalThickness)
+		self.Eyy = 1 / (self.effectiveCompliance[1,1] * self.TotalThickness)
+		self.Gxy = 1 / (self.effectiveCompliance[2,2] * self.TotalThickness)
+		self.Nuxy = - self.effectiveCompliance[0,1] / self.effectiveCompliance[0,0]
+		self.Etaxs = self.effectiveCompliance[0,2] / self.effectiveCompliance[0,0]
+		self.Etays = self.effectiveCompliance[1,2] / self.effectiveCompliance[1,1]
+
+		self.effectiveCTE = self.effectiveCompliance * self.specificNT
+		self.ax = self.effectiveCTE[0,0]
+		self.ay = self.effectiveCTE[1,0]
+		self.axy = self.effectiveCTE[2,0]
 
 if __name__ == '__main__':
 	# 3D Properties: Test Cases:
 	# These use metric values for material properties
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
 	glassUni3D = ContinuumMaterial(name='Glass Uni', E11_in=41e9, E22_in=10.4e9, E33_in=10.4e9, Nu12_in=0.28, Nu13_in=0.28, Nu23_in=0.50, G12_in=4.3e9, G13_in=4.3e9, G23_in=3.5e9, ArealDensity_in=1.97, CPT_in=1)
-	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.0001524)
-	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.0001524)
+	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.006)
+	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.006)
 	lam_3D_0 = Laminate(plyBook=[ply_3D_0], n_count=1, symmetry=False)
 	lam_3D_90 = Laminate(plyBook=[ply_3D_90], n_count=1, symmetry=False)
 
@@ -280,9 +291,9 @@ if __name__ == '__main__':
 	############################################################################
 	# 2D Properties: Test Cases:
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
-	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, ArealDensity_in=1.97, CPT_in=1)
-	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.0001524)
-	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.0001524)
+	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, a1_in= 3.9e-6, a2_in= 14.4e-6,ArealDensity_in=1.97, CPT_in=1)
+	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.006)
+	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.006)
 	lam_2D_0_S = Laminate(plyBook=[ply_2D_0], n_count=1, symmetry=True)
 	lam_2D_90_S = Laminate(plyBook=[ply_2D_90], n_count=1, symmetry=True)
 	# Need to generate a symetric 3D composite for comparison
@@ -297,18 +308,18 @@ if __name__ == '__main__':
 	Rotated2D3D = Laminate3D(lam=lam_3D_90_S)
 	Rotated2D.getEffectiveProperties()
 
-	NoRotated2DTruth = np.isclose(NoRotation2D.Exx,NoRotation2D3D.Exx,rtol=0.01) and \
-	np.isclose(NoRotation2D.Eyy,NoRotation2D3D.Eyy,rtol=0.01) and \
-	np.isclose(NoRotation2D.Gxy,NoRotation2D3D.Gxy,rtol=0.01) and \
-	np.isclose(NoRotation2D.Nuxy,NoRotation2D3D.Nuxy,rtol=0.01)
+	NoRotated2DTruth = np.isclose(NoRotation2D.Exx,NoRotation2D3D.Exx,rtol=0.01)
+	NoRotated2DTruth = NoRotated2DTruth and np.isclose(NoRotation2D.Eyy,NoRotation2D3D.Eyy,rtol=0.01)
+	NoRotated2DTruth = NoRotated2DTruth and np.isclose(NoRotation2D.Gxy,NoRotation2D3D.Gxy,rtol=0.01)
+	NoRotated2DTruth = NoRotated2DTruth and np.isclose(NoRotation2D.Nuxy,NoRotation2D3D.Nuxy,rtol=0.01)
 
-	Rotated2DTruth = np.isclose(Rotated2D.Exx,Rotated2D3D.Exx,rtol=0.01) and \
-	np.isclose(Rotated2D.Eyy,Rotated2D3D.Eyy,rtol=0.01) and \
-	np.isclose(Rotated2D.Gxy,Rotated2D3D.Gxy,rtol=0.01) and \
-	np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
+	Rotated2DTruth = np.isclose(Rotated2D.Exx,Rotated2D3D.Exx,rtol=0.01)
+	Rotated2DTruth = Rotated2DTruth and np.isclose(Rotated2D.Eyy,Rotated2D3D.Eyy,rtol=0.01)
+	Rotated2DTruth = Rotated2DTruth and np.isclose(Rotated2D.Gxy,Rotated2D3D.Gxy,rtol=0.01)
+	Rotated2DTruth = Rotated2DTruth and np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
 
 	print('\n2D LAMINATE TEST RESULTS\n+++++++++++++++++++++++++++++++++++++++')
-	#print(NoRotation2D)
+	print(NoRotation2D)
 	#print(Rotated2D)
 	print('2D 1-ply, 0deg Pass? '+str(NoRotated2DTruth))
 	print('2D 1-ply, 90deg Pass? '+str(Rotated2DTruth))
