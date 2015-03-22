@@ -22,7 +22,7 @@ class LaminateProperties(object):
 
 	def __str__(self):
 		# Output basic results of the laminate. Ordered keys
-		np.set_printoptions(precision=3, linewidth=128, suppress=True)
+		np.set_printoptions(precision=3, linewidth=128, suppress=False)
 		output = "== "+self.__class__.__name__+" Properties ==\n"
 		for key in sorted(self.__dict__.keys()):
 			output += (key+" = "+str(self.__dict__[key])+"\n")
@@ -189,9 +189,11 @@ class Laminate2D(LaminateProperties):
 			u3 = ply.Material.U3
 			u4 = ply.Material.U4
 			u5 = ply.Material.U5
+
 			c4 = np.cos(4 * np.radians(ply.Orientation))
 			c2 = np.cos(2 * np.radians(ply.Orientation))
 			c1 = np.cos(1 * np.radians(ply.Orientation))
+
 			s4 = np.sin(4 * np.radians(ply.Orientation))
 			s2 = np.sin(2 * np.radians(ply.Orientation))
 			s1 = np.sin(1 * np.radians(ply.Orientation))
@@ -234,26 +236,26 @@ class Laminate2D(LaminateProperties):
 
 		# Generate properties
 		#print(self.A.I)
-		self.effectiveCompliance = self.A.I
-		self.Exx = 1 / (self.effectiveCompliance[0,0] * self.TotalThickness)
-		self.Eyy = 1 / (self.effectiveCompliance[1,1] * self.TotalThickness)
-		self.Gxy = 1 / (self.effectiveCompliance[2,2] * self.TotalThickness)
-		self.Nuxy = - self.effectiveCompliance[0,1] / self.effectiveCompliance[0,0]
-		self.Etaxs = self.effectiveCompliance[0,2] / self.effectiveCompliance[0,0]
-		self.Etays = self.effectiveCompliance[1,2] / self.effectiveCompliance[1,1]
+		effectiveCompliance = self.A.I
+		self.Exx = 1 / (effectiveCompliance[0,0] * self.TotalThickness)
+		self.Eyy = 1 / (effectiveCompliance[1,1] * self.TotalThickness)
+		self.Gxy = 1 / (effectiveCompliance[2,2] * self.TotalThickness)
+		self.Nuxy = - effectiveCompliance[0,1] / effectiveCompliance[0,0]
+		self.Etaxs = effectiveCompliance[0,2] / effectiveCompliance[0,0]
+		self.Etays = effectiveCompliance[1,2] / effectiveCompliance[1,1]
 
-		self.effectiveCTE = self.effectiveCompliance * self.specificNT
-		self.ax = self.effectiveCTE[0,0]
-		self.ay = self.effectiveCTE[1,0]
-		self.axy = self.effectiveCTE[2,0]
+		effectiveCTE = effectiveCompliance * self.specificNT
+		self.ax = effectiveCTE[0,0]
+		self.ay = effectiveCTE[1,0]
+		self.axy = effectiveCTE[2,0]
 
 if __name__ == '__main__':
-	# 3D Properties: Test Cases:
+	# 3D Properties: Test Cases: SI UNITS
 	# These use metric values for material properties
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
 	glassUni3D = ContinuumMaterial(name='Glass Uni', E11_in=41e9, E22_in=10.4e9, E33_in=10.4e9, Nu12_in=0.28, Nu13_in=0.28, Nu23_in=0.50, G12_in=4.3e9, G13_in=4.3e9, G23_in=3.5e9, ArealDensity_in=1.97, CPT_in=1)
-	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.006)
-	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.006)
+	ply_3D_0 = Ply(matl=glassUni3D, orient=0, thk=0.1524e-3)
+	ply_3D_90 = Ply(matl=glassUni3D, orient=90, thk=0.1524e-3)
 	lam_3D_0 = Laminate(plyBook=[ply_3D_0], n_count=1, symmetry=False)
 	lam_3D_90 = Laminate(plyBook=[ply_3D_90], n_count=1, symmetry=False)
 
@@ -289,11 +291,11 @@ if __name__ == '__main__':
 	print('3D 1-ply, 90deg Pass? '+str(Rotated3DTruth))
 
 	############################################################################
-	# 2D Properties: Test Cases:
+	# 2D Properties: Test Cases: SI UNITS
 	# 1 Ply, No rotation (xx=11) and 90 deg rotation (xx=22)
-	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, a1_in= 3.9e-6, a2_in= 14.4e-6,ArealDensity_in=1.97, CPT_in=1)
-	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.006)
-	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.006)
+	glassUni2D = PlateMaterial(name='Glass Uni Plate', E11_in=41e9, E22_in=10.4e9, Nu12_in=0.28, G12_in=4.3e9, a1_in= 7e-6, a2_in= 26e-6,ArealDensity_in=1.97, CPT_in=1)
+	ply_2D_0 = Ply(matl=glassUni2D, orient=0, thk=0.1524e-3)
+	ply_2D_90 = Ply(matl=glassUni2D, orient=90, thk=0.1524e-3)
 	lam_2D_0_S = Laminate(plyBook=[ply_2D_0], n_count=1, symmetry=True)
 	lam_2D_90_S = Laminate(plyBook=[ply_2D_90], n_count=1, symmetry=True)
 	# Need to generate a symetric 3D composite for comparison
@@ -319,7 +321,7 @@ if __name__ == '__main__':
 	Rotated2DTruth = Rotated2DTruth and np.isclose(Rotated2D.Nuxy,Rotated2D3D.Nuxy,rtol=0.01)
 
 	print('\n2D LAMINATE TEST RESULTS\n+++++++++++++++++++++++++++++++++++++++')
-	print(NoRotation2D)
+	#print(NoRotation2D)
 	#print(Rotated2D)
 	print('2D 1-ply, 0deg Pass? '+str(NoRotated2DTruth))
 	print('2D 1-ply, 90deg Pass? '+str(Rotated2DTruth))

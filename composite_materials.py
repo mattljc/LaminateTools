@@ -87,10 +87,10 @@ class PlateMaterial(CompositeMaterial):
 		[0  , 0  , s66]])
 
 		Q = self.Compliance.I
-		self.U1 = 3*(Q[0,0] + Q[1,1])/8 + Q[0,1]/4 + Q[2,2]/2
-		self.U2 = (Q[0,0] - Q[1,2])/2
+		self.U1 = (Q[0,0] + Q[1,1])*3/8 + Q[0,1]/4 + Q[2,2]/2
+		self.U2 = (Q[0,0] - Q[1,1])/2
 		self.U3 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 - Q[2,2]/2
-		self.U4 = (Q[0,0] + Q[1,1])/8 + 3*Q[0,1]/4 - Q[2,2]/2
+		self.U4 = (Q[0,0] + Q[1,1])/8 + Q[0,1]*3/4 - Q[2,2]/2
 		self.U5 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 + Q[2,2]/2
 
 	def __repr__(self):
