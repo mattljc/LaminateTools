@@ -3,6 +3,7 @@ import numpy as np
 from composite_materials import *
 from ply_stack import *
 from laminate_properties import *
+import time
 
 def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 	# Fitness returns the thickness of a laminate having analyzed its properties and calculated overall strains
@@ -15,7 +16,7 @@ def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 	# strain_limits: a list of global strain limits in the form [ex, ey, exy, kx, ky, kxy]
 
 	# Cast inputs as appropriate types
-	a = lam_details[0]
+	a = int(lam_details[0])
 	m = int(lam_details[1])
 	n = int(lam_details[2])
 	#print('[{a:.2g}_{m} / 0_{n} / 90_{n} / 0_{n} / {negA:.2g}_{m} ]'.format(a=a, m=m, n=n, negA=a*-1))
@@ -41,28 +42,31 @@ def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 	# Calculate global strains and compare to limits
 	strains = augmentedABD.I * forces
 	#print(strains.T)
-	acceptable = np.allclose(strains,strain_limits)
+	acceptable = True
+	for ct in [0,1,2,3,4,5]:
+		acceptable = acceptable and strains[ct]<=strain_limits[ct]
+
 	if acceptable:
 		return plate.TotalThickness
 	else:
-		return 1e9
+		return np.inf
 
 
-material = PlateMaterial(name='hw7matl', E11_in=20e6, E22_in=1e6, Nu12_in=0.3, G12_in=0.7e6, a1_in=0, a2_in=0, ArealDensity_in=0.058, CPT_in=0.006)
+material = PlateMaterial(name='hw7matl', E11_in=1.85e7, E22_in=1.8e6, Nu12_in=0.3, G12_in=9.3e5, a1_in=0, a2_in=0, ArealDensity_in=0.058, CPT_in=0.006)
 
-ex=2e-5
-ey=2e-5
-exy=2e-5
+ex=1
+ey=0.005
+exy=0.005
 kx = 1.0
 ky = 1.0
 kxy = 1.0
 
-pressure = 200.00 #psi
+pressure = 500.00 #psi
 radius = 20.0 #in
-torque_force = 300 #lb
+torque_force = 300000.0 #lb
 Nx= pressure * radius
 Ny= pressure * radius / 2
-Nxy= torque_force / (2*np.pi)
+Nxy= torque_force / (2*np.pi*radius)
 Mx= 0
 My= 0
 Mxy= 0
@@ -71,10 +75,29 @@ strainLimits = np.matrix([[ex],[ey],[exy],[kx],[ky],[kxy]]) # set unconstrained 
 forces = np.matrix([[Nx],[Ny],[Nxy],[Mx],[My],[Mxy]]) # see hand notes for derrivations
 initial = [45, 1, 1] # big, massively overbuilt initial guess.
 
-bounds = ((-90,90),(1,20),(1,20))
-#optimum = opt.minimize(PlateThicknessLimitedStrain, initial, args=(material, forces, strainLimits), method='Nelder-Mead', options={'disp': True,'ftol':1e-8})
-optimum = opt.differential_evolution(PlateThicknessLimitedStrain,bounds,args=(material, forces, strainLimits),maxiter=10)
-#bruteAttack =
+bounds = ((0,90),(1,100),(1,100))
+
+start = time.time()
+optimum = opt.differential_evolution(PlateThicknessLimitedStrain, bounds,
+args=(material, forces, strainLimits),
+popsize = 10,
+maxiter=1000,
+tol = 0.0001,
+mutation=(0.5, 1),
+recombination=0.7,
+seed=95203,
+disp=True,
+polish=True)
+
+#bruteAttack = opt.brute(PlateThicknessLimitedStrain, bounds, \
+#args=(material, forces, strainLimits), \
+#Ns = 20,
+#full_output=True, \
+#finish = None)
+elapsed = time.time() - start
 
 print(optimum.message)
-print(optimum.x)
+print('a= {a}deg m= {m} n= {n}'.format(a=int(optimum.x[0]), m=int(optimum.x[1]), n=int(optimum.x[2])))
+#print(bruteAttack[0])
+#print(bruteAttack[1])
+print('Time elapsed = {t:.2f}s'.format(t=elapsed))
