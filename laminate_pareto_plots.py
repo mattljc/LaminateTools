@@ -4,8 +4,9 @@ from ply_stack import *
 from laminate_properties import *
 import matplotlib
 import matplotlib.cm as cm
-import matplotlib.mlab as mlab
+import matplotlib.pylab as pylab
 import matplotlib.pyplot as plt
+
 
 def LaminateBuilder(a=45,m=10,n=10,material=None):
 	# Build the plies
@@ -15,7 +16,7 @@ def LaminateBuilder(a=45,m=10,n=10,material=None):
 	ply90 = Ply(matl=material, orient=90)
 
 	# Build the plybook, laminate and analyses
-	plybook = [plyA]*m + [ply0]*n + [ply90]*n + [ply0]*n + [plyNegA]*m
+	plybook = plybook = [plyA]*m + [plyNegA]*m + [ply0]*n + [ply90]*n + [ply0]*n + [plyNegA]*m + [plyA]*m
 	laminate = Laminate(plyBook=plybook)
 
 	return laminate
@@ -25,9 +26,9 @@ def LaminateBuilder(a=45,m=10,n=10,material=None):
 aRange = np.arange(0,91,5)
 mRange = np.arange(1,52,2)
 nRange = np.arange(1,52,2)
-aDefault = 45
-mDefault = 35
-nDefault = 1
+aBaseline = 46.153
+mBaseline = 8
+nBaseline = 2
 a_amMesh, m_amMesh = np.meshgrid(aRange, mRange)
 a_anMesh, n_anMesh = np.meshgrid(aRange, nRange)
 m_mnMesh, n_mnMesh = np.meshgrid(mRange, nRange)
@@ -57,7 +58,7 @@ forces = np.matrix([[Nx],[Ny],[Nxy],[Mx],[My],[Mxy]])
 # a-m plane
 for row in np.arange(0,a_amMesh.shape[0],1): #Rows
 	for col in np.arange(0,a_amMesh.shape[1],1): #Columns
-		lam = LaminateBuilder(a=a_amMesh[row,col], m=m_amMesh[row,col], n=nDefault, material=material)
+		lam = LaminateBuilder(a=a_amMesh[row,col], m=m_amMesh[row,col], n=nBaseline, material=material)
 		props = Laminate2D(lam=lam)
 		strains = props.ABD.I * forces
 		ey_am[row,col] = strains[1,0]
@@ -66,7 +67,7 @@ for row in np.arange(0,a_amMesh.shape[0],1): #Rows
 #a-n plane
 for row in np.arange(0,a_anMesh.shape[0],1): #Rows
 	for col in np.arange(0,a_anMesh.shape[1],1): #Columns
-		lam = LaminateBuilder(a=a_anMesh[row,col], m=mDefault, n=n_anMesh[row,col], material=material)
+		lam = LaminateBuilder(a=a_anMesh[row,col], m=mBaseline, n=n_anMesh[row,col], material=material)
 		props = Laminate2D(lam=lam)
 		strains = props.ABD.I * forces
 		ey_an[row,col] = strains[1,0]
@@ -75,7 +76,7 @@ for row in np.arange(0,a_anMesh.shape[0],1): #Rows
 #m-n plane
 for row in np.arange(0,m_mnMesh.shape[0],1): #Rows
 	for col in np.arange(0,m_mnMesh.shape[1],1): #Columns
-		lam = LaminateBuilder(a=aDefault, m=m_mnMesh[row,col], n=n_mnMesh[row,col], material=material)
+		lam = LaminateBuilder(a=aBaseline, m=m_mnMesh[row,col], n=n_mnMesh[row,col], material=material)
 		props = Laminate2D(lam=lam)
 		strains = props.ABD.I * forces
 		ey_mn[row,col] = strains[1,0]
@@ -90,59 +91,64 @@ lvs = [.005, .004, .003, .002, .001]
 # Plot a-m plane
 plt.figure(1)
 am_ey_contour = plt.contour(a_amMesh,m_amMesh,ey_am, levels=lvs)
-plt.plot(aDefault,mDefault,'ko')
+plt.plot(aBaseline,mBaseline,'ko')
 plt.clabel(am_ey_contour, inline=1, fontsize=10)
-plt.title('a-m plane\nLongitudinal Strains, Constant n={const}'.format(const=mDefault))
+#plt.title('a-m plane\nLongitudinal Strains, Constant n={const}'.format(const=mBaseline))
 plt.axis([0,90,0,50])
 plt.xlabel('a [deg]')
 plt.ylabel('m [# plies]')
+pylab.savefig('amTrans.pdf', bbox_inches='tight')
 ############
 plt.figure(2)
 am_exy_contour = plt.contour(a_amMesh,m_amMesh,exy_am, levels=lvs)
-plt.plot(aDefault,mDefault,'ko')
+plt.plot(aBaseline,mBaseline,'ko')
 plt.clabel(am_exy_contour, inline=1, fontsize=10)
-plt.title('a-m plane\nShear Strains, Constant n={const}'.format(const=mDefault))
+#plt.title('a-m plane\nShear Strains, Constant n={const}'.format(const=mBaseline))
 plt.axis([0,90,0,50])
 plt.xlabel('a [deg]')
 plt.ylabel('m [# plies]')
+pylab.savefig('amShear.pdf', bbox_inches='tight')
 
 # Plot a-n plane
 plt.figure(3)
 an_ey_contour = plt.contour(a_anMesh,n_anMesh,ey_an, levels=lvs)
-plt.plot(aDefault,nDefault,'ko')
+plt.plot(aBaseline,nBaseline,'ko')
 plt.clabel(an_ey_contour, inline=1, fontsize=10)
-plt.title('a-n plane\nLongitudinal Strains, Constant m={const}'.format(const=nDefault))
+#plt.title('a-n plane\nLongitudinal Strains, Constant m={const}'.format(const=nBaseline))
 plt.axis([0,90,0,50])
 plt.xlabel('a [deg]')
 plt.ylabel('n [# plies]')
+pylab.savefig('anTrans.pdf', bbox_inches='tight')
 #############
 plt.figure(4)
 an_exy_contour = plt.contour(a_anMesh,n_anMesh,exy_an, levels=lvs)
-plt.plot(aDefault,nDefault,'ko')
+plt.plot(aBaseline,nBaseline,'ko')
 plt.clabel(an_exy_contour, inline=1, fontsize=10)
-plt.title('a-n plane\nShear Strains, Constant m={const}'.format(const=nDefault))
+#plt.title('a-n plane\nShear Strains, Constant m={const}'.format(const=nBaseline))
 plt.axis([0,90,0,50])
 plt.xlabel('a [deg]')
 plt.ylabel('n [# plies]')
+pylab.savefig('anShear.pdf', bbox_inches='tight')
 
 # Plot m-n plane
 plt.figure(5)
 mn_ey_contour = plt.contour(m_mnMesh,n_mnMesh,ey_mn, levels=lvs)
-plt.plot(mDefault,nDefault,'ko')
+plt.plot(mBaseline,nBaseline,'ko')
 plt.clabel(mn_ey_contour, inline=1, fontsize=10)
-plt.title('m-n plane\nLongitudinal Strains, Constant a={const}'.format(const=aDefault))
+#plt.title('m-n plane\nLongitudinal Strains, Constant a={const}'.format(const=aBaseline))
 plt.axis([0,50,0,50])
 plt.xlabel('m [# plies]')
 plt.ylabel('n [# plies]')
+pylab.savefig('mnTrans.pdf', bbox_inches='tight')
 #############
 plt.figure(6)
 mn_exy_contour = plt.contour(m_mnMesh,n_mnMesh,exy_mn, levels=lvs)
-plt.plot(mDefault,nDefault,'ko')
+plt.plot(mBaseline,nBaseline,'ko')
 plt.clabel(mn_exy_contour, inline=1, fontsize=10)
-plt.title('m-n plane\nShear Strains, Constant a={const}'.format(const=aDefault))
+#plt.title('m-n plane\nShear Strains, Constant a={const}'.format(const=aBaseline))
 plt.axis([0,50,0,50])
 plt.xlabel('m [# plies]')
 plt.ylabel('n [# plies]')
-
+pylab.savefig('mnShear.pdf', bbox_inches='tight')
 
 plt.show()
