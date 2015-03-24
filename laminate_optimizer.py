@@ -16,20 +16,11 @@ def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 	# strain_limits: a list of global strain limits in the form [ex, ey, exy, kx, ky, kxy]
 
 	# Cast inputs as appropriate types
-	a = int(lam_details[0])
+	a = lam_details[0]
 	m = int(lam_details[1])
 	n = int(lam_details[2])
-	#print('[{a:.2g}_{m} / 0_{n} / 90_{n} / 0_{n} / {negA:.2g}_{m} ]'.format(a=a, m=m, n=n, negA=a*-1))
 
-	# Build the plies
-	plyA = Ply(matl=material, orient=a)
-	plyNegA = Ply(matl=material, orient=-a)
-	ply0 = Ply(matl=material, orient=0)
-	ply90 = Ply(matl=material, orient=90)
-
-	# Build the plybook, laminate and analyses
-	plybook = [plyA]*m + [ply0]*n + [ply90]*n + [ply0]*n + [plyNegA]*m
-	laminate = Laminate(plyBook=plybook)
+	laminate = LaminateBuilder(a,m,n,material)
 	plate = Laminate2D(lam=laminate)
 
 	# Take output a,b,d matrices from analysis and build an augmented ABD matrix to determine strains
@@ -47,10 +38,25 @@ def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 		acceptable = acceptable and strains[ct]<=strain_limits[ct]
 
 	if acceptable:
-		return plate.TotalThickness
+		thk=plate.TotalThickness
 	else:
-		return np.inf
+		thk=np.inf
 
+	#print(('[a={ao} m={mo} n={no}] -- [ey={eyo:.3e} exy={exyo:.3e}] -- thk={to}').format(ao=a,mo=m,no=n,eyo=strains[1,0],exyo=strains[2,0],to=thk))
+	return thk
+
+def LaminateBuilder(a=45,m=10,n=10, material=None):
+	# Build the plies
+	plyA = Ply(matl=material, orient=a)
+	plyNegA = Ply(matl=material, orient=-a)
+	ply0 = Ply(matl=material, orient=0)
+	ply90 = Ply(matl=material, orient=90)
+
+	# Build the plybook, laminate and analyses
+	plybook = [plyA]*m + [ply0]*n + [ply90]*n + [ply0]*n + [plyNegA]*m
+	laminate = Laminate(plyBook=plybook)
+
+	return laminate
 
 material = PlateMaterial(name='hw7matl', E11_in=1.85e7, E22_in=1.8e6, Nu12_in=0.3, G12_in=9.3e5, a1_in=0, a2_in=0, ArealDensity_in=0.058, CPT_in=0.006)
 
@@ -62,8 +68,8 @@ ky = 1.0
 kxy = 1.0
 
 pressure = 500.00 #psi
-radius = 20.0 #in
-torque_force = 300000.0 #lb
+radius = 10.0 #in
+torque_force = 3e5 #lb
 Nx= pressure * radius
 Ny= pressure * radius / 2
 Nxy= torque_force / (2*np.pi*radius)
@@ -73,7 +79,7 @@ Mxy= 0
 
 strainLimits = np.matrix([[ex],[ey],[exy],[kx],[ky],[kxy]]) # set unconstrained strains to 1, definitely larger than anything that should be calculated
 forces = np.matrix([[Nx],[Ny],[Nxy],[Mx],[My],[Mxy]]) # see hand notes for derrivations
-initial = [45, 1, 1] # big, massively overbuilt initial guess.
+initial = [45, 100, 100] # big, massively overbuilt initial guess.
 
 bounds = ((0,90),(1,100),(1,100))
 
@@ -81,14 +87,15 @@ start = time.time()
 optimum = opt.differential_evolution(PlateThicknessLimitedStrain, bounds,
 args=(material, forces, strainLimits),
 popsize = 10,
-maxiter=1000,
-tol = 0.0001,
+maxiter=5000,
+tol = 0.00001,
 mutation=(0.5, 1),
+seed = 55361,
 recombination=0.7,
-seed=95203,
 disp=True,
-polish=True)
+polish=False)
 
+# Brute force attack code included for reference. Can be useful if evolution isn't working nicely
 #bruteAttack = opt.brute(PlateThicknessLimitedStrain, bounds, \
 #args=(material, forces, strainLimits), \
 #Ns = 20,
@@ -96,8 +103,15 @@ polish=True)
 #finish = None)
 elapsed = time.time() - start
 
-print(optimum.message)
-print('a= {a}deg m= {m} n= {n}'.format(a=int(optimum.x[0]), m=int(optimum.x[1]), n=int(optimum.x[2])))
-#print(bruteAttack[0])
-#print(bruteAttack[1])
+finalLam = LaminateBuilder(a=int(optimum.x[0]), m=int(optimum.x[1]), n=int(optimum.x[2]), material=material)
+finalPlate = Laminate2D(lam=finalLam)
+finalPlate.getEffectiveProperties()
+finalStrains = finalPlate.ABD.I*forces
+
+print('\n'+optimum.message)
 print('Time elapsed = {t:.2f}s'.format(t=elapsed))
+print('a= {a:.3f}deg m= {m} n= {n}'.format(a=optimum.x[0], m=int(optimum.x[1]), n=int(optimum.x[2])))
+print('Nx={nx:.3e} Ny={ny:.3e} Nxy={nxy:.3e}'.format(nx=Nx, ny=Ny, nxy=Nxy))
+print('ex={ex:.3e} ey={ey:.3e} exy={exy:.3e}'.format(ex=finalStrains[0,0], ey=finalStrains[1,0], exy=finalStrains[2,0]))
+print('\nOptimized Laminate Properties')
+print(finalPlate)

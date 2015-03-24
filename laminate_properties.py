@@ -24,7 +24,10 @@ class LaminateProperties(object):
 		# Output basic results of the laminate. Ordered keys
 		np.set_printoptions(precision=3, linewidth=128, suppress=False)
 		output = "== "+self.__class__.__name__+" Properties ==\n"
-		for key in sorted(self.__dict__.keys()):
+		keyList = sorted(self.__dict__.keys())
+		while 'specificNT' in keyList: keyList.remove('specificNT')
+		while 'laminate' in keyList: keyList.remove('laminate')
+		for key in keyList:
 			output += (key+" = "+str(self.__dict__[key])+"\n")
 		return output
 
@@ -225,6 +228,12 @@ class Laminate2D(LaminateProperties):
 
 			# Increment Z
 			zLow = zUp
+
+		self.ABD = np.matrix( np.zeros((6,6)) )
+		self.ABD[0:3,0:3] = self.A
+		self.ABD[0:3,3:] = self.B
+		self.ABD[3:,0:3] = self.B
+		self.ABD[3:,3:] = self.D
 
 	def getEffectiveProperties(self):
 		# Test that the laminate is symmetric, otherwise these calculations aren't valid
