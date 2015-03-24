@@ -23,15 +23,8 @@ def PlateThicknessLimitedStrain(lam_details, material, forces, strain_limits):
 	laminate = LaminateBuilder(a,m,n,material)
 	plate = Laminate2D(lam=laminate)
 
-	# Take output a,b,d matrices from analysis and build an augmented ABD matrix to determine strains
-	augmentedABD = np.matrix( np.zeros((6,6)) )
-	augmentedABD[0:3,0:3] = plate.A
-	augmentedABD[0:3,3:] = plate.B
-	augmentedABD[3:,0:3] = plate.B
-	augmentedABD[3:,3:] = plate.D
-
 	# Calculate global strains and compare to limits
-	strains = augmentedABD.I * forces
+	strains = plate.ABD.I * forces
 	#print(strains.T)
 	acceptable = True
 	for ct in [0,1,2,3,4,5]:
@@ -90,7 +83,7 @@ popsize = 10,
 maxiter=5000,
 tol = 0.00001,
 mutation=(0.5, 1),
-seed = 55361,
+#seed = 55361,
 recombination=0.7,
 disp=True,
 polish=False)
