@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
 <plate>
 
-	<materialProps name="AS4-8552-UNI" E11="19.09e6" E22="1.34e6" nu12="0.302" G12="0.7e6" CPT="0.0074" arealDensity="0.0004"/>
+	<materialProps name="IM7/977-3-UNI" E11="27.7e6" E22="1.44e6" nu12="0.35" G12="1.13e6" a1="-0.5e-6" a2="12.4e-6" CPT="0.0074" arealDensity="0.058"/>
+	<materialProps name="GY-70/934-UNI" E11="42.7e6" E22="0.92e6" nu12="0.23" G12="0.71e6" a1="-0.06e-6" a2="14.4e-6" CPT="0.0074" arealDensity="0.058"/>
 
 	<plybook name="No-Rotation-Test" n_count="1" sym="1">
-		<ply material="AS4-8552-UNI" orientation="0" thickness="0.006" />
+		<ply material="IM7/977-3-UNI" orientation="0" thickness="0.006" />
 	</plybook>
 
 	<plybook name="90Deg-Rotation-Test" n_count="1" sym="1">
-		<ply material="AS4-8552-UNI" orientation="90" thickness="0.006" />
+		<ply material="GY-70/934-UNI" orientation="90" thickness="0.006" />
 	</plybook>
 
 </plate>

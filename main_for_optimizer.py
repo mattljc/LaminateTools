@@ -42,5 +42,9 @@ allowables = np.matrix([[ex],[ey],[exy],[1],[1],[1]])
 
 result = SimpleOptimizer(material=matl, randSeed=seed, forces=forces, strain_limits=allowables)
 
+file = open('optimum_result.txt','w')
+file.write(result['msg'])
+file.write(result['lam'])
+file.close()
+
 print(result['msg'])
-print(result['lam'])
