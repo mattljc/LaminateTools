@@ -37,9 +37,11 @@ def fromXML(laminate_file=None):
 			E22 = float(material.attrib["E22"])
 			nu12 = float(material.attrib["nu12"])
 			G12 = float(material.attrib["G12"])
+			a1 = float(material.attrib["a1"])
+			a2 = float(material.attrib["a2"])
 			CPT = float(material.attrib["CPT"])
 			arealDens = float(material.attrib["arealDensity"])
-			Material_Dict.update({matlName : PlateMaterial(name=matlName, E11_in=E11, E22_in=E22, Nu12_in=nu12, G12_in=G12, ArealDensity_in=arealDens, CPT_in=CPT)})
+			Material_Dict.update({matlName : PlateMaterial(name=matlName, E11_in=E11, E22_in=E22, Nu12_in=nu12, G12_in=G12, a1_in=a1, a2_in=a2, ArealDensity_in=arealDens, CPT_in=CPT)})
 
 	elif (root.tag == 'beam'):
 		# A beam analysis, which is scheduled for future implementation
