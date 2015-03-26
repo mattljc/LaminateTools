@@ -1,3 +1,6 @@
 # LaminateTools
 Python based calculation of composite mechanical properties.
-**Put more stuff in here so people can actually use it**
+
+FLAG DAY WARNING
+
+Substantial changes are afoot. Any previously downloaded code is likely to be broken.
