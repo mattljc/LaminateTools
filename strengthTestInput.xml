@@ -1,0 +1,20 @@
+<strength>
+
+	<continuum>
+	</continuum>
+
+	<plate>
+		<material />
+
+		<plybook>
+			<ply />
+			<ply />
+		</plybook>
+
+		<stress />
+	</plate>
+
+	<beam>
+	</beam>
+
+</strength>

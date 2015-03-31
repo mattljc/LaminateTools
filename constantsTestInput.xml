@@ -1,0 +1,10 @@
+<constants type='continuum/plate/beam'>
+
+		<material />
+
+		<plybook>
+			<ply />
+			<ply />
+		</plybook>
+
+</constants>

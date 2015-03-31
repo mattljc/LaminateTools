@@ -1,0 +1,21 @@
+<optimize>
+
+	<optimizeLaminate>
+
+		<material />
+
+		<target />
+
+		<constraints />
+
+		<patern />
+
+	</optimizeLaminate>
+
+	<optimizeMaterial>
+	</optimizeMaterial>
+
+	<superOptimize>
+	</superOptimize>
+
+</optimize>
