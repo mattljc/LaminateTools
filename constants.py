@@ -1,6 +1,6 @@
 import numpy as np
-import materials as matls
-import lamination as lam
+import materials
+import lamination
 
 
 class LaminateProperties(object):
@@ -8,15 +8,15 @@ class LaminateProperties(object):
 
 	def __init__(self, lam=None):
 		# Constructor wants a Laminate type as its sole input.
-		assert isinstance(lam, lam.Laminate)
+		assert isinstance(lam, lamination.Laminate)
 		self.laminate = lam
 
 		# Make global properties common to all types
 		self.TotalThickness = 0
-		self.TotalDensity = 0
+		self.TotalAreaDensity = 0
 		for ply in self.laminate.PlyStack:
 			self.TotalThickness += ply.Thickness
-			self.TotalArealDensity += ply.Material.Density
+			self.TotalAreaDensity += ply.Material.Density * ply.Thickness
 
 	def __str__(self):
 		# Output basic results of the laminate. Ordered keys
@@ -39,12 +39,29 @@ class LaminateProperties(object):
 		output += repr(self.laminate)
 		return output
 
+	def getLaminateProperties():
+		# Function generates the requisite laminate properties and
+		# stores them in the object
+		raise NotImplementedError
+
+	def calculateStress():
+		#
+		raise NotImplementedError
+
+	def calculateStrain():
+		#
+		raise NotImplementedError
+
 	def toXML(self):
 		pass
 
 class Continuum(LaminateProperties):
-	# Calculates the laminate properties of a thick laminate, including out of plane properties.
-	# Define permutation matrix P to group inplane terms and its inverse, used extensively in analysis.
+	# Calculates the laminate properties of a thick laminate, including
+	# out of plane properties, and shear thinnning effects. This is
+	# primarily for use in brick elements.
+
+	# P is defined as the permutation matrix that group inplanes terms.
+	# P and its inverse are used extensively in analysis.
 	P = np.matrix([ \
 	[1,0,0,0,0,0], \
 	[0,1,0,0,0,0], \
@@ -56,18 +73,19 @@ class Continuum(LaminateProperties):
 
 	def __init__(self, lam=None):
 		# Call the super-constructor
-		super(Continuum,self).__init__(lam)
+		LaminateProperties.__init__(lam)
 		# This laminate analysis object will have TotalThickness and TotalArealDensity
 
 		# Must check that material definitions are compatable with 3d properties.
 		for ply in self.laminate.PlyStack:
-			assert isinstance(ply.Material, matl.Continuum)
+			assert isinstance(ply.Material, materials.Continuum)
 
 		self.getLaminateProperties()
 
 	def __buildTks(self):
 		# Build T-Matrices for each ply and add them to that Ply object
-		# This really shouldn't be accessed by itself. Should be accessed as part of property calculations
+		# This really shouldn't be accessed by itself. Should be
+		# accessed as part of property calculations
 		for ply in self.laminate.PlyStack:
 			m1 = np.cos(np.radians(ply.Orientation))
 			m2 = -1* np.sin(np.radians(ply.Orientation))
@@ -90,12 +108,13 @@ class Continuum(LaminateProperties):
 	def getLaminateProperties(self):
 		self.__buildTks() # Makes ply transform matrix
 
-		# Build full H-matrices for each ply and store as part of that Ply object. Slice them later.
+		# Build full H-matrices for each ply and store as part of that
+		# Ply object. Slice them later.
 		for ply in self.laminate.PlyStack:
 			ply.GlobalCompliance = ply.Tinv * ply.Material.Compliance * ply.T
 			ply.H = self.P * ply.GlobalCompliance.I * self.Pinv
 
-		# Build the A-matrix quadrants. See wiki for details of the math source
+		# Build the A-matrix quadrants. See wiki for details of the math source.
 		able = np.matrix( np.zeros((3,3)) )
 		baker = np.matrix( np.zeros((3,3)) )
 		charlie = np.matrix( np.zeros((3,3)) )
@@ -142,15 +161,17 @@ class Continuum(LaminateProperties):
 
 		# NEED: Implementation for 3d CTE
 
-class Plate(LaminateProperties):
-	# Calculates the properties of a thin laminate where the out-of-plane properties can be ignored.
+class ThinPlate(LaminateProperties):
+	# Calculates the properties of a thin laminate where the
+	# out-of-plane properties can be ignored, using classic laminated
+	# plate theory.
 	def __init__(self, lam=None):
 		# Call the super-constructor
-		super(Plate,self).__init__(lam)
+		LaminateProperties.__init__(self,lam)
 
 		# Must check that material definitions are compatable with 3d properties.
 		for ply in self.laminate.PlyStack:
-			assert isinstance(ply.Material, matl.Plate)
+			assert isinstance(ply.Material, materials.Plate)
 
 		self.getLaminateProperties()
 
@@ -175,7 +196,7 @@ class Plate(LaminateProperties):
 			u3 = ply.Material.U3
 			u4 = ply.Material.U4
 			u5 = ply.Material.U5
-			
+
 			c4 = np.cos(4 * np.radians(ply.Orientation))
 			c2 = np.cos(2 * np.radians(ply.Orientation))
 			c1 = np.cos(1 * np.radians(ply.Orientation))
@@ -219,10 +240,11 @@ class Plate(LaminateProperties):
 		self.ABD[3:,3:] = self.D
 
 	def getEffectiveProperties(self):
-		# Test that the laminate is symmetric, otherwise these calculations aren't valid
-		#assert self.laminate.Symmetry == True
 
-		# Report a soft warining if an asymmetric laminate is given. This is not strictly valid, but effective properties are extremely useful for informed WAGing. Thus we should at least warn the user about what they're doing.
+		# Report a soft warining if an asymmetric laminate is given.
+		# This is not strictly valid, but effective properties are
+		# extremely useful for informed WAGing. Thus we should at least
+		# warn the user about what they're doing.
 		if self.laminate.Symmetry is False:
 			UserWarning('Laminate is not symmetric. Effective properties may not be valid.')
 
@@ -239,3 +261,17 @@ class Plate(LaminateProperties):
 		self.ax = effectiveCTE[0,0]
 		self.ay = effectiveCTE[1,0]
 		self.axy = effectiveCTE[2,0]
+
+class ThickPlate(LaminateProperties):
+	# Calculates the properties of a plate where shear distortion must
+	# be included but shear thinning effects can be ignored, such as in
+	# a sandwich pannel. This uses first order shear deformation theory.
+	def __init__(self, lam=None):
+		# Call the super-constructor
+		super(Plate,self).__init__(lam)
+
+		# Must check that material definitions are compatable with 3d properties.
+		for ply in self.laminate.PlyStack:
+			assert isinstance(ply.Material, matl.Continuum)
+
+		self.getLaminateProperties()

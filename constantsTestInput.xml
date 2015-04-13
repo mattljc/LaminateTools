@@ -1,10 +1,13 @@
-<constants type='continuum/plate/beam'>
+<constants type='thinplate'>
 
-		<material />
+		<material name='T700/2510-UNI' E11='18.2e6' E22='1.2e6' G12='0.6e6' Nu12='0.3' Dens='0.035' CPT='0.006'/>
 
-		<plybook>
-			<ply />
-			<ply />
+		<plybook name='NoRotation' n='1' s='1'>
+			<ply material='T700/2510-UNI' orientation='0' thickness='0.006'/>
+		</plybook>
+
+		<plybook name='Rotated90' n='1' s='1'>
+			<ply material='T700/2510-UNI' orientation='90' thickness='0.006'/>
 		</plybook>
 
 </constants>

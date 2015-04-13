@@ -1,4 +1,4 @@
-import materials as matls
+import materials
 
 class Laminate(object):
 	#
@@ -39,7 +39,7 @@ class Ply(object):
 	#
 	def __init__(self, matl=None, orient=0, thk=None):
 		# Test material is appropriate type
-		assert isinstance(matl, matl.Materials)
+		assert isinstance(matl, materials.Materials)
 		self.Material = matl
 		# Test ply thickness, use CPT from material if blank
 		if thk==None:
