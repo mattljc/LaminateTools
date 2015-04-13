@@ -19,21 +19,12 @@ class Materials(object):
 		output = self.__class__.__name__ +'  ' + str(self.InputDict)
 		return output
 
-	def __eq__(self,other):
-		assert isinstance(other, Materials)
-		truth = True
-		try:
-			for key in self.InputDict:
-				truth = truth and self.InputDict[key]
-		except KeyError:
-			# Do nothing, just means that you may be comparing different
-			# material types.
-			pass
-		return truth
-
-	def __ne__(self, other):
-		return not self.__eq__(other)
-	# add xml tag output function
+	# Implementation of logical operators is meaningless beyond equals
+	# and not equals. For safety, the user should only use 'is' operator
+	# instead of logicals which may have unintended side effects.
+	#
+	# At this stage do not attempt to mix material types, even thought
+	# this is logical in some analysis types.
 
 class Continuum(Materials):
 	# Defines a 'thick' composite material, with out-of-plane properties
@@ -70,7 +61,6 @@ class Continuum(Materials):
 			self.a2 = 0
 			self.a3 = 0
 		# Dynamics to be implemented
-		# CME to be implemented
 
 		# Make Compliance
 		s11 = 1/self.E11

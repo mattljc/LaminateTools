@@ -4,7 +4,8 @@ import lamination
 
 
 class LaminateProperties(object):
-	# Superclass containing all the useful overides and the basic constructor
+	# Superclass containing the basic constructor and essential contract
+	# through which the LaminateProperties subclasses operate.
 
 	def __init__(self, lam=None):
 		# Constructor wants a Laminate type as its sole input.
@@ -41,19 +42,28 @@ class LaminateProperties(object):
 
 	def getLaminateProperties():
 		# Function generates the requisite laminate properties and
-		# stores them in the object
+		# stores them in the object.
 		raise NotImplementedError
 
 	def calculateStress():
-		#
+		# Given global or per ply strains, calculate global and
+		# per ply stresses.
 		raise NotImplementedError
 
 	def calculateStrain():
-		#
+		# Given global or per ply stesses, calculate global and
+		# per ply strains.
 		raise NotImplementedError
 
-	def toXML(self):
-		pass
+	def toXML():
+		# Outputs useful properties as an XML subtree to be appended to
+		# the original XML document.
+		raise NotImplementedError
+
+	def toFEA():
+		# Outputs material property files for use in NASTRAN, ABAQUS
+		# and ANSYS
+		raise NotImplementedError
 
 class Continuum(LaminateProperties):
 	# Calculates the laminate properties of a thick laminate, including
@@ -158,7 +168,6 @@ class Continuum(LaminateProperties):
 		self.Etays = self.TotalCompliance[1,5] / self.TotalCompliance[1,1]
 		self.Etazs = self.TotalCompliance[2,5] / self.TotalCompliance[2,2]
 		self.Etart = self.TotalCompliance[3,4] / (2 * self.TotalCompliance[4,4])
-
 		# NEED: Implementation for 3d CTE
 
 class ThinPlate(LaminateProperties):
@@ -239,10 +248,9 @@ class ThinPlate(LaminateProperties):
 		self.ABD[3:,0:3] = self.B
 		self.ABD[3:,3:] = self.D
 
-	def getEffectiveProperties(self):
-
-		# Report a soft warining if an asymmetric laminate is given.
-		# This is not strictly valid, but effective properties are
+		# This section generates the effective laminate properties of
+		# the plate. Report a soft warining if an asymmetric laminate is
+		# given. This is not strictly valid, but effective properties are
 		# extremely useful for informed WAGing. Thus we should at least
 		# warn the user about what they're doing.
 		if self.laminate.Symmetry is False:
