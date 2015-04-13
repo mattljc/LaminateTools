@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/mattljc/LaminateTools.png?label=ready&title=Ready)](https://waffle.io/mattljc/LaminateTools)
 # LaminateTools
 Python based calculation of composite mechanical properties.
 
