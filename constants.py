@@ -1,7 +1,7 @@
 import numpy as np
 import materials
 import lamination
-
+from copy import deepcopy
 
 class LaminateProperties(object):
 	# Superclass containing the basic constructor and essential contract
@@ -9,8 +9,9 @@ class LaminateProperties(object):
 
 	def __init__(self, lam=None):
 		# Constructor wants a Laminate type as its sole input.
-		assert isinstance(lam, lamination.Laminate)
+		assert isinstance(lam, lamination.Laminate), 'Input not a laminate'
 		self.laminate = lam
+
 
 		# Make global properties common to all types
 		self.TotalThickness = 0
@@ -45,14 +46,9 @@ class LaminateProperties(object):
 		# stores them in the object.
 		raise NotImplementedError
 
-	def calculateStress():
-		# Given global or per ply strains, calculate global and
-		# per ply stresses.
-		raise NotImplementedError
-
-	def calculateStrain():
-		# Given global or per ply stesses, calculate global and
-		# per ply strains.
+	def calculatePlyStressStrain():
+		# Given some sort of global load, calculate the stress and
+		# strain in each ply.
 		raise NotImplementedError
 
 	def toXML():
@@ -88,7 +84,8 @@ class Continuum(LaminateProperties):
 
 		# Must check that material definitions are compatable with 3d properties.
 		for ply in self.laminate.PlyStack:
-			assert isinstance(ply.Material, materials.Continuum)
+			assert isinstance(ply.Material, materials.Continuum), \
+			'Wrong material type'
 
 		self.getLaminateProperties()
 
@@ -180,7 +177,7 @@ class ThinPlate(LaminateProperties):
 
 		# Must check that material definitions are compatable with 3d properties.
 		for ply in self.laminate.PlyStack:
-			assert isinstance(ply.Material, materials.Plate)
+			assert isinstance(ply.Material, materials.Plate), 'Wrong material type'
 
 		self.getLaminateProperties()
 
@@ -270,6 +267,44 @@ class ThinPlate(LaminateProperties):
 		self.ay = effectiveCTE[1,0]
 		self.axy = effectiveCTE[2,0]
 
+
+	def calculatePlyStressStrain(self, resultants=None):
+		# Take force and moment resultants, calculate the global mid-
+		# surface strains and curvatures and then iterate through the
+		# laminate calculating strains and stresses for each ply.
+		# Ply stress/strain is stored in the relevant Ply object.
+		# Global strain/curvature is stored in the ThinPlate object.
+
+		# Check type of resultants and enforce matrix shape.
+		assert isinstance(resultants, np.matrix), 'resultants is not a matrix'
+		assert resultants.shape == (6,1), 'resultants is not 6x1 matrix'
+
+		self.Resultants = resultants
+		self.midStrainsCurves = self.ABD.I * self.Resultants
+		midStrains = self.midStrainsCurves[:3,0]
+		midCurves = self.midStrainsCurves[3:,0]
+		# Go through the ply stack, work out the stresses and strains
+		# Figuring out z location in exactly the same way as in
+		# getLaminateProperties
+
+		zLow = -self.TotalThickness / 2
+		for ply in self.laminate.PlyStack:
+			# Build the transform matrix
+			m = np.cos(np.radians(ply.Orientation))
+			n = np.sin(np.radians(ply.Orientation))
+			T = np.matrix([\
+			[m**2, n**2, 2*m*n],\
+			[n**2, m**2, -2*m*n],\
+			[-m*n, m*n, m**2-n**2]])
+
+			zUp = zLow + ply.Thickness
+			globalStrain = midStrains + zUp*midCurves
+			globalStrain[2,0] = globalStrain[2,0]/2 #Convert gamma to epsilon
+
+			ply.Strain = T * globalStrain
+			ply.Stress = ply.Material.Compliance.I * ply.Strain
+			zLow=zUp
+
 class ThickPlate(LaminateProperties):
 	# Calculates the properties of a plate where shear distortion must
 	# be included but shear thinning effects can be ignored, such as in
@@ -283,3 +318,25 @@ class ThickPlate(LaminateProperties):
 			assert isinstance(ply.Material, matl.Continuum)
 
 		self.getLaminateProperties()
+
+# Test Script
+if __name__=='__main__':
+	t700 ={'name':'T700/2510-UNI', 'E11':18.2e6, 'E22':1.2e6, \
+	'G12':0.6e6, 'Nu12':0.3, 'Dens':0.035, 'CPT':0.006}
+	t700mat = materials.Plate(t700)
+
+	ply0_2d = lamination.Ply(matl=t700mat, orient=0, thk=0.006)
+	lam2d = lamination.Laminate(plyBook=[ply0_2d, deepcopy(ply0_2d)], n_count=1, symmetry=False)
+	plate = ThinPlate(lam=lam2d)
+	print(str(plate))
+
+	force_moment = np.matrix([0,0,0,10,0,0]).T
+	plate.calculatePlyStressStrain(resultants=force_moment)
+	count = 1
+	for ply in plate.laminate.PlyStack:
+		print(id(ply))
+		print('Ply #{ct:d} | s1={s1:.3e} s2={s2:.3e} s3={s3:.3e} |'+
+		'e1={e1:.3e} e2={e2:.3e} e3={e3:.3e}').format(ct=count,
+		s1=ply.Stress[0,0], s2=ply.Stress[1,0], s3=ply.Stress[2,0],
+		e1=ply.Strain[0,0], e2=ply.Strain[1,0], e3=ply.Strain[2,0])
+		count+=1
