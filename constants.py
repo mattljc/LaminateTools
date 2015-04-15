@@ -298,7 +298,7 @@ class ThinPlate(LaminateProperties):
 			[-m*n, m*n, m**2-n**2]])
 
 			zUp = zLow + ply.Thickness
-			globalStrain = midStrains + zUp*midCurves
+			globalStrain = midStrains + (zUp+zLow)/2*midCurves
 			globalStrain[2,0] = globalStrain[2,0]/2 #Convert gamma to epsilon
 
 			ply.Strain = T * globalStrain
