@@ -1,4 +1,5 @@
 import materials
+from copy import deepcopy
 
 class Laminate(object):
 	# A laminate is an ordered list of plies. The order is assumed to
@@ -17,11 +18,21 @@ class Laminate(object):
 		# tricks can be used.
 		self.Symmetry = symmetry
 		self.nCount = n_count
-		plyBook = plyBook*self.nCount
+
+		for ct in range(self.nCount):
+			temp_list = list()
+			for ply in plyBook:
+				temp_ply = deepcopy(ply)
+				temp_list += [temp_ply]
+			plyBook = plyBook + temp_list
 
 		#Fancy slice adding the reverse back to itself
 		if self.Symmetry:
-			plyBook += plyBook[::-1]
+			temp_list = list()
+			for ply in plyBook[::-1]:
+				temp_ply = deepcopy(ply)
+				temp_list += [temp_ply]
+			plyBook += temp_list
 
 		self.PlyStack = plyBook
 
@@ -46,7 +57,7 @@ class Ply(object):
 	# the global x-direction.
 	def __init__(self, matl=None, orient=0, thk=None):
 		# Test material is appropriate type
-		#assert isinstance(matl, materials.Materials)
+		assert isinstance(matl, materials.Materials)
 		self.Material = matl
 		# Test ply thickness, use CPT from material if blank
 		if thk==None:

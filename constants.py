@@ -326,7 +326,7 @@ if __name__=='__main__':
 	t700mat = materials.Plate(t700)
 
 	ply0_2d = lamination.Ply(matl=t700mat, orient=0, thk=0.006)
-	lam2d = lamination.Laminate(plyBook=[ply0_2d, deepcopy(ply0_2d)], n_count=1, symmetry=False)
+	lam2d = lamination.Laminate(plyBook=[ply0_2d], n_count=2, symmetry=True)
 	plate = ThinPlate(lam=lam2d)
 	print(str(plate))
 
@@ -334,9 +334,8 @@ if __name__=='__main__':
 	plate.calculatePlyStressStrain(resultants=force_moment)
 	count = 1
 	for ply in plate.laminate.PlyStack:
-		print(id(ply))
-		print('Ply #{ct:d} | s1={s1:.3e} s2={s2:.3e} s3={s3:.3e} |'+
-		'e1={e1:.3e} e2={e2:.3e} e3={e3:.3e}').format(ct=count,
+		print('Ply ({id:d}) #{ct:d} | s1={s1:+.3e} s2={s2:+.3e} s3={s3:+.3e} |'+
+		'e1={e1:+.3e} e2={e2:+.3e} e3={e3:+.3e}').format(id=id(ply),ct=count,
 		s1=ply.Stress[0,0], s2=ply.Stress[1,0], s3=ply.Stress[2,0],
 		e1=ply.Strain[0,0], e2=ply.Strain[1,0], e3=ply.Strain[2,0])
 		count+=1
