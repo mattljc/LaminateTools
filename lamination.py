@@ -55,16 +55,15 @@ class Ply(object):
 	# A ply is a single layer of a laminated composite material.
 	# Orientation is measured between the logical ply 1-direction and
 	# the global x-direction.
-	def __init__(self, matl=None, orient=0, thk=None):
+	def __init__(self, definitionDict):
 		# Test material is appropriate type
-		assert isinstance(matl, materials.Materials)
-		self.Material = matl
-		# Test ply thickness, use CPT from material if blank
-		if thk==None:
-			self.Thickness = self.Material.CPT
-		else:
-			self.Thickness = thk
-		self.Orientation = orient
+		assert isinstance(definitionDict['matl'], materials.Materials)
+		try:
+			self.Material = definitionDict['matl']
+			self.Thickness = definitionDict['thk']
+			self.Orientation = definitionDict['orient']
+		except KeyError:
+			raise KeyError('Check properties input, minimum information not provided')
 
 	def __str__(self):
 		# The string output is functionally the same as the representation

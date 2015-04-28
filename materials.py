@@ -26,6 +26,27 @@ class Materials(object):
 	# At this stage do not attempt to mix material types, even thought
 	# this is logical in some analysis types.
 
+class Isotropic(Materials):
+	# A classic isotropic material
+
+	def __init__(self, propsDict = None):
+		Materials.__init__(propsDict)
+		self.Name = self.InputDict['name']
+		self.E = self.InputDict['E']
+		self.Nu = self.InputDict['Nu']
+		self.G = self.E / (2*(1+self.Nu))
+		self.Density = self.InputDict['Dens']
+
+	def convertToContinuum(self):
+		# Returns a continuum material with the correct material properties
+		# Uses a dummy value for CPT, this shouldn't be used for anything.
+		temp_dict = {'E11':self.E, 'E22':self.E, 'E33':self.E,
+		'G12':self.G, 'G13':self.G, 'G23':self.G,
+		'Nu12':self.Nu, 'Nu13':self.Nu, 'Nu23':self.Nu
+		'CPT':0.1}
+		brick_dict = dict(self.InputDict).update()
+		return brick
+
 class Continuum(Materials):
 	# Defines a 'thick' composite material, with out-of-plane properties
 	# This class is the archetype for all other populated material classes.
@@ -132,10 +153,14 @@ class Beam(Materials):
 	def __init__(self):
 		raise NotImplementedError
 
-#class Isotropic(Materials):
-#
-#	def __init__(self):
-#		super(Plate,self).__init__(propsDict)
-#		self.Name = self.InputDict['name']
-#		self.E = self.InputDict['E']
-#		self.Nu = self.InputDict['Nu']
+
+class WeakCore(Materials):
+	# This is a dummy material that represents a dummy core that adds
+	# no strength to the laminate.
+
+	def __init__(self):
+		# Constructor calls the super constructor and leaves it at that.
+		# Weak cores have no properties other than name.
+		propsDict = {'name':'WeakCore'}
+		Materials.__init__(self, propsDict)
+		self.Name = self.InputDict['name']
