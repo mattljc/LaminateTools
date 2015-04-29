@@ -55,6 +55,7 @@ class Continuum(Materials):
 		# Collect everything from a dictionary. This first batch are required
 		Materials.__init__(self,propsDict)
 
+		# MINIMUM FUNCTIONAL PROPERTY SET
 		try:
 			self.Name = self.InputDict['name']
 			self.E11 = float(self.InputDict['E11'])
@@ -72,6 +73,7 @@ class Continuum(Materials):
 			raise KeyError('Check properties input, minimum information not provided')
 
 		# These properties are not required for basic functionality.
+		# THERMAL PROPERTIES
 		try:
 			self.a1 = self.InputDict['a1']
 			self.a2 = self.InputDict['a2']
@@ -81,6 +83,7 @@ class Continuum(Materials):
 			self.a1 = 0
 			self.a2 = 0
 			self.a3 = 0
+
 		# Dynamics to be implemented
 
 		# Make Compliance
@@ -102,12 +105,14 @@ class Continuum(Materials):
 		[0  , 0  , 0  , 0  , 0  , s66]])
 
 class Plate(Materials):
-	# Defines a plate material for use in classic lamination theory. See wiki for where this type is appropriate.
+	# Defines a plate material for use in classic lamination theory.
+	# See wiki for where this type is appropriate.
 
 	def __init__(self, propsDict = None):
 		# Collect everything from a dictionary. This first batch are required
 		Materials.__init__(self, propsDict)
 
+		# MINIMUM FUNCTIONAL PROPERTY SET
 		try:
 			self.Name = self.InputDict['name']
 			self.E11 = float(self.InputDict['E11'])
@@ -129,6 +134,36 @@ class Plate(Materials):
 			self.a1 = 0
 			self.a2 = 0
 
+		# STRESS LIMITS
+		try:
+			self.f1t = self.InputDict['f1t']
+			self.f1c = self.InputDict['f1c']
+			self.f2t = self.InputDict['f2t']
+			self.f2c = self.InputDict['f2c']
+			self.f12s = self.InputDict['f12s']
+		except KeyError:
+			warnings.warn('No stress limits included, setting all to infinity')
+			self.f1t = np.inf
+			self.f1c = np.inf
+			self.f2t = np.inf
+			self.f2c = np.inf
+			self.f12s = np.inf
+
+		# STRAIN LIMITS
+		try:
+			self.e1t = self.InputDict['e1t']
+			self.e1c = self.InputDict['e1c']
+			self.e2t = self.InputDict['e2t']
+			self.e2c = self.InputDict['e2c']
+			self.e12s = self.InputDict['e12s']
+		except KeyError:
+			warnings.warn('No strain limits included, setting all to infinity')
+			self.e1t = np.inf
+			self.e1c = np.inf
+			self.e2t = np.inf
+			self.e2c = np.inf
+			self.e12s = np.inf
+
 		# Make compliance
 		s11 = 1/self.E11
 		s12 = -self.Nu12/self.E11
@@ -146,6 +181,13 @@ class Plate(Materials):
 		self.U3 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 - Q[2,2]/2
 		self.U4 = (Q[0,0] + Q[1,1])/8 + Q[0,1]*3/4 - Q[2,2]/2
 		self.U5 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 + Q[2,2]/2
+
+class ThickPlate(Plate)
+	# Defines a thick plate material for use in first order shear
+	# deformation theory. See wiki for details of usage situtaions.
+
+	def __init__(self):
+		raise NotImplementedError
 
 
 class Beam(Materials):
