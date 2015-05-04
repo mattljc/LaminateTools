@@ -2,6 +2,10 @@
 *properties.txt
 *output.txt
 
+# Homework and school project files
+HW*
+#AME*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
