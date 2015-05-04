@@ -252,22 +252,20 @@ class ThinPlate(LaminateProperties):
 		# given. This is not strictly valid, but effective properties are
 		# extremely useful for informed WAGing. Thus we should at least
 		# warn the user about what they're doing.
-		if self.laminate.Symmetry is False:
-			UserWarning('Laminate is not symmetric. Effective properties may not be valid.')
+		if self.laminate.Symmetry is True:
+			# Generate properties
+			effectiveCompliance = self.A.I
+			self.Exx = 1 / (effectiveCompliance[0,0] * self.TotalThickness)
+			self.Eyy = 1 / (effectiveCompliance[1,1] * self.TotalThickness)
+			self.Gxy = 1 / (effectiveCompliance[2,2] * self.TotalThickness)
+			self.Nuxy = - effectiveCompliance[0,1] / effectiveCompliance[0,0]
+			self.Etaxs = effectiveCompliance[0,2] / effectiveCompliance[0,0]
+			self.Etays = effectiveCompliance[1,2] / effectiveCompliance[1,1]
 
-		# Generate properties
-		effectiveCompliance = self.A.I
-		self.Exx = 1 / (effectiveCompliance[0,0] * self.TotalThickness)
-		self.Eyy = 1 / (effectiveCompliance[1,1] * self.TotalThickness)
-		self.Gxy = 1 / (effectiveCompliance[2,2] * self.TotalThickness)
-		self.Nuxy = - effectiveCompliance[0,1] / effectiveCompliance[0,0]
-		self.Etaxs = effectiveCompliance[0,2] / effectiveCompliance[0,0]
-		self.Etays = effectiveCompliance[1,2] / effectiveCompliance[1,1]
-
-		effectiveCTE = effectiveCompliance * self.specificNT
-		self.ax = effectiveCTE[0,0]
-		self.ay = effectiveCTE[1,0]
-		self.axy = effectiveCTE[2,0]
+			effectiveCTE = effectiveCompliance * self.specificNT
+			self.ax = effectiveCTE[0,0]
+			self.ay = effectiveCTE[1,0]
+			self.axy = effectiveCTE[2,0]
 
 
 	def calculatePlyStressStrain(self, resultants=None):

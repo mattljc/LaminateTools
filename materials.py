@@ -126,11 +126,11 @@ class Plate(Materials):
 
 		# STRESS LIMITS
 		try:
-			self.f1t = self.InputDict['f1t']
-			self.f1c = self.InputDict['f1c']
-			self.f2t = self.InputDict['f2t']
-			self.f2c = self.InputDict['f2c']
-			self.f12s = self.InputDict['f12s']
+			self.f1t = float(self.InputDict['f1t'])
+			self.f1c = float(self.InputDict['f1c'])
+			self.f2t = float(self.InputDict['f2t'])
+			self.f2c = float(self.InputDict['f2c'])
+			self.f12s = float(self.InputDict['f12s'])
 		except KeyError:
 			warnings.warn('No stress limits included, setting all to infinity')
 			self.f1t = np.inf
@@ -194,3 +194,4 @@ class WeakCore(Materials):
 		# Weak cores have a name and zero density
 		self.Name = 'WeakCore'
 		self.Density = 0.0
+		self.InputDict = {'name':'WeakCore'}

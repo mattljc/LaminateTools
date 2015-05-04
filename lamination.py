@@ -60,8 +60,8 @@ class Ply(object):
 		assert isinstance(definitionDict['matl'], materials.Materials)
 		try:
 			self.Material = definitionDict['matl']
-			self.Thickness = definitionDict['thk']
-			self.Orientation = definitionDict['orient']
+			self.Thickness = float(definitionDict['thk'])
+			self.Orientation = float(definitionDict['orient'])
 		except KeyError:
 			raise KeyError('Check properties input, minimum information not provided')
 
