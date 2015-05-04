@@ -177,7 +177,9 @@ class ThinPlate(LaminateProperties):
 
 		# Must check that material definitions are compatable with 3d properties.
 		for ply in self.laminate.PlyStack:
-			assert isinstance(ply.Material, materials.Plate), 'Wrong material type'
+			assert isinstance(ply.Material, materials.Plate) or \
+			       isinstance(ply.Material, materials.WeakCore), \
+			       'Wrong material type'
 
 		self.getLaminateProperties()
 
@@ -195,46 +197,46 @@ class ThinPlate(LaminateProperties):
 
 		# Build global compliances ply by ply, then add to the A, B and D matrices
 		for ply in self.laminate.PlyStack:
-			# Build ply stiffness and CTE in global coordinates
-			# Use invariant method to ensure symetry of the final result.
-			u1 = ply.Material.U1
-			u2 = ply.Material.U2
-			u3 = ply.Material.U3
-			u4 = ply.Material.U4
-			u5 = ply.Material.U5
-
-			c4 = np.cos(4 * np.radians(ply.Orientation))
-			c2 = np.cos(2 * np.radians(ply.Orientation))
-			c1 = np.cos(1 * np.radians(ply.Orientation))
-
-			s4 = np.sin(4 * np.radians(ply.Orientation))
-			s2 = np.sin(2 * np.radians(ply.Orientation))
-			s1 = np.sin(1 * np.radians(ply.Orientation))
-
-			Q11 = u1 + u2*c2 + u3*c4
-			Q22 = u1 - u2*c2 + u3*c4
-			Q12 = u4 - u3*c4
-			Q66 = u5 - u3*c4
-			Q16 = u2*s2/2 + u3*s4
-			Q26 = u2*s2/2 - u3*s4
-
-			ax = ply.Material.a1*c1**2 + ply.Material.a2*s1**2
-			ay = ply.Material.a1*s1**2 + ply.Material.a2*c1**2
-			axy = (ply.Material.a2-ply.Material.a1)*c1*s1
-
-			ply.GlobalStiffness = np.matrix([
-			[Q11, Q12, Q16], \
-			[Q12, Q22, Q26], \
-			[Q16, Q26, Q66]])
-
-			ply.GlobalCTE = np.matrix([[ax],[ay],[axy]])
-
-			# Build A,B,D matrices
 			zUp = zLow + ply.Thickness
-			self.A += ply.GlobalStiffness * (zUp - zLow)
-			self.B += ply.GlobalStiffness * (zUp**2 - zLow**2) / 2
-			self.D += ply.GlobalStiffness * (zUp**3 - zLow**3) / 3
-			self.specificNT += ply.GlobalStiffness * ply.GlobalCTE * (zUp - zLow)
+			if isinstance(ply.Material, materials.Plate):
+				# Build ply stiffness and CTE in global coordinates
+				# Use invariant method to ensure symetry of the final result.
+				u1 = ply.Material.U1
+				u2 = ply.Material.U2
+				u3 = ply.Material.U3
+				u4 = ply.Material.U4
+				u5 = ply.Material.U5
+
+				c4 = np.cos(4 * np.radians(ply.Orientation))
+				c2 = np.cos(2 * np.radians(ply.Orientation))
+				c1 = np.cos(1 * np.radians(ply.Orientation))
+
+				s4 = np.sin(4 * np.radians(ply.Orientation))
+				s2 = np.sin(2 * np.radians(ply.Orientation))
+				s1 = np.sin(1 * np.radians(ply.Orientation))
+
+				Q11 = u1 + u2*c2 + u3*c4
+				Q22 = u1 - u2*c2 + u3*c4
+				Q12 = u4 - u3*c4
+				Q66 = u5 - u3*c4
+				Q16 = u2*s2/2 + u3*s4
+				Q26 = u2*s2/2 - u3*s4
+
+				ax = ply.Material.a1*c1**2 + ply.Material.a2*s1**2
+				ay = ply.Material.a1*s1**2 + ply.Material.a2*c1**2
+				axy = (ply.Material.a2-ply.Material.a1)*c1*s1
+
+				ply.GlobalStiffness = np.matrix([
+				[Q11, Q12, Q16], \
+				[Q12, Q22, Q26], \
+				[Q16, Q26, Q66]])
+				ply.GlobalCTE = np.matrix([[ax],[ay],[axy]])
+
+				# Build A,B,D matrices
+				self.A += ply.GlobalStiffness * (zUp - zLow)
+				self.B += ply.GlobalStiffness * (zUp**2 - zLow**2) / 2
+				self.D += ply.GlobalStiffness * (zUp**3 - zLow**3) / 3
+				self.specificNT += ply.GlobalStiffness * ply.GlobalCTE * (zUp - zLow)
 
 			# Increment Z
 			zLow = zUp
@@ -289,21 +291,22 @@ class ThinPlate(LaminateProperties):
 
 		zLow = -self.TotalThickness / 2
 		for ply in self.laminate.PlyStack:
-			# Build the transform matrix
-			m = np.cos(np.radians(ply.Orientation))
-			n = np.sin(np.radians(ply.Orientation))
-			T = np.matrix([\
-			[m**2, n**2, 2*m*n],\
-			[n**2, m**2, -2*m*n],\
-			[-m*n, m*n, m**2-n**2]])
+			if isinstance(ply.Material, materials.Plate):
+				# Build the transform matrix
+				m = np.cos(np.radians(ply.Orientation))
+				n = np.sin(np.radians(ply.Orientation))
+				T = np.matrix([\
+				[m**2, n**2, 2*m*n],\
+				[n**2, m**2, -2*m*n],\
+				[-m*n, m*n, m**2-n**2]])
 
-			zUp = zLow + ply.Thickness
-			globalStrain = midStrains + (zUp+zLow)/2*midCurves
-			globalStrain[2,0] = globalStrain[2,0]/2 #Convert gamma to epsilon
+				zUp = zLow + ply.Thickness
+				globalStrain = midStrains + (zUp+zLow)/2*midCurves
+				globalStrain[2,0] = globalStrain[2,0]/2 #Convert gamma to epsilon
 
-			ply.Strain = T * globalStrain
-			ply.Stress = ply.Material.Compliance.I * ply.Strain
-			zLow=zUp
+				ply.Strain = T * globalStrain
+				ply.Stress = ply.Material.Compliance.I * ply.Strain
+				zLow=zUp
 
 class ThickPlate(LaminateProperties):
 	# Calculates the properties of a plate where shear distortion must

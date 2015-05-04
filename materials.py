@@ -37,16 +37,6 @@ class Isotropic(Materials):
 		self.G = self.E / (2*(1+self.Nu))
 		self.Density = self.InputDict['Dens']
 
-	def convertToContinuum(self):
-		# Returns a continuum material with the correct material properties
-		# Uses a dummy value for CPT, this shouldn't be used for anything.
-		temp_dict = {'E11':self.E, 'E22':self.E, 'E33':self.E,
-		'G12':self.G, 'G13':self.G, 'G23':self.G,
-		'Nu12':self.Nu, 'Nu13':self.Nu, 'Nu23':self.Nu
-		'CPT':0.1}
-		brick_dict = dict(self.InputDict).update()
-		return brick
-
 class Continuum(Materials):
 	# Defines a 'thick' composite material, with out-of-plane properties
 	# This class is the archetype for all other populated material classes.
@@ -182,7 +172,7 @@ class Plate(Materials):
 		self.U4 = (Q[0,0] + Q[1,1])/8 + Q[0,1]*3/4 - Q[2,2]/2
 		self.U5 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 + Q[2,2]/2
 
-class ThickPlate(Plate)
+class ThickPlate(Plate):
 	# Defines a thick plate material for use in first order shear
 	# deformation theory. See wiki for details of usage situtaions.
 
@@ -201,8 +191,6 @@ class WeakCore(Materials):
 	# no strength to the laminate.
 
 	def __init__(self):
-		# Constructor calls the super constructor and leaves it at that.
-		# Weak cores have no properties other than name.
-		propsDict = {'name':'WeakCore'}
-		Materials.__init__(self, propsDict)
-		self.Name = self.InputDict['name']
+		# Weak cores have a name and zero density
+		self.Name = 'WeakCore'
+		self.Density = 0.0

@@ -19,7 +19,7 @@ class Laminate(object):
 		self.Symmetry = symmetry
 		self.nCount = n_count
 
-		for ct in range(self.nCount):
+		for ct in range(self.nCount-1):
 			temp_list = list()
 			for ply in plyBook:
 				temp_ply = deepcopy(ply)
