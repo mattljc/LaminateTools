@@ -9,19 +9,27 @@ def MaxStress(laminate,kind='any'):
 			s2 = ply.Stress[1,0]
 			s12 = ply.Stress[2,0]
 
-			f1 = ply.Material.f1t*(s1>=0) + ply.Material.f1c*(s1<0)
-			f2 = ply.Material.f2t*(s2>=0) + ply.Material.f2c*(s2<0)
+			if (s1>=0):
+				f1 = ply.Material.f1t
+			else:
+				f1 = ply.Material.f1c
+
+			if (s2>=0):
+				f2 = ply.Material.f2t
+			else:
+				f2 = ply.Material.f2c
+
 			f12 = ply.Material.f12s
 
-			k1 = s1/f1
-			k2 = s2/f2
-			k12 = s12/f12
+			k1 = abs(s1/f1)
+			k2 = abs(s2/f2)
+			k12 = abs(s12/f12)
 
 			ply.MaxStressFail = [k1, k2, k12]
 			if kind == 'long': case = k1
 			elif kind == 'trans': case = k2
 			elif kind == 'shear': case = k12
-			else: case = min([k1, k2, k12])
+			else: case = max([k1, k2, k12])
 
 			index.append(case)
 	return np.array(index)

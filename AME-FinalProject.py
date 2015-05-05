@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import scipy.optimize as opti
 import matplotlib
@@ -5,15 +7,71 @@ import matplotlib.cm as cm
 import matplotlib.pylab as pylab
 import matplotlib.pyplot as plt
 
-import materials
-import lamination
-import constants
-import plate_failure
-import failure_envelope
+#import materials
+#import lamination
+#import constants
+#import plate_failure
+#import failure_envelope
 import xml_Core
 
 
-analysis, envelopes, index = xml_Core.inputFromXML(input_file='FinalProject.xml')
+
+
+try:
+    file = open('rundata.p','rb')
+    analysis, envelopes, index = pickle.load(file)
+except IOError:
+    analysis, envelopes, index = xml_Core.inputFromXML(input_file='FinalProject.xml')
+    file = open('rundata.p','wb')
+    pickle.dump([analysis, envelopes, index], file)
+
+
+lamHoffman = envelopes['laminate--primary  Hoffman/NM-LinVar']
+lamMaxStress = envelopes['laminate--primary  MaxStressAny/NM-LinVar']
+sandHoffman = envelopes['sandwich--primary  Hoffman/NM-LinVar']
+sandMaxStress = envelopes['sandwich--primary  MaxStressAny/NM-LinVar']
+
+plt.figure(1)
+#laminate index compare
+plt.plot(lamHoffman['aPlot'],lamHoffman['bPlot'],'-r',label='Laminate, Hoffman')
+plt.plot(lamMaxStress['aPlot'],lamMaxStress['bPlot'],'-b',label='Laminate, Max Stress, Any')
+plt.axhline(color='k')
+plt.axvline(color='k')
+plt.legend(['Laminate, Hoffman','Laminate, Max Stress, Any'],loc=0)
+plt.axis([-1.5,0.5,-0.1,0.1])
+plt.grid(b=True, which='major', color='0.5', linestyle='--')
+plt.xlabel('Force Resultant Multiplier, a')
+plt.ylabel('Moment Resultant Multiplier, b')
+pylab.savefig('laminate-MS-Hoff.pdf', bbox_inches='tight')
+
+plt.figure(2)
+#laminate index compare
+plt.plot(sandHoffman['aPlot'],sandHoffman['bPlot'],'-g',label='Laminate, Hoffman')
+plt.plot(sandMaxStress['aPlot'],sandMaxStress['bPlot'],'-m',label='Laminate, Max Stress, Any')
+plt.axhline(color='k')
+plt.axvline(color='k')
+plt.legend(['Sandwich, Hoffman','Sandwich, Max Stress, Any'],loc=0)
+plt.axis([-1.5,0.5,-5,5])
+plt.grid(b=True, which='major', color='0.5', linestyle='--')
+plt.xlabel('Force Resultant Multiplier, a')
+plt.ylabel('Moment Resultant Multiplier, b')
+pylab.savefig('sandwich-MS-Hoff.pdf', bbox_inches='tight')
+
+plt.figure(3)
+#laminate index compare
+plt.plot(lamHoffman['aPlot'],lamHoffman['bPlot'],'-r',label='Laminate, Hoffman')
+plt.plot(sandHoffman['aPlot'],sandHoffman['bPlot'],'-g',label='Laminate, Hoffman')
+plt.axhline(color='k')
+plt.axvline(color='k')
+plt.legend(['Laminate, Hoffman','Sandwich, Hoffman'],loc=0)
+plt.axis([-1.5,0.5,-3,5])
+plt.grid(b=True, which='major', color='0.5', linestyle='--')
+plt.xlabel('Force Resultant Multiplier, a')
+plt.ylabel('Moment Resultant Multiplier, b')
+pylab.savefig('sandwich-laminate-hoff.pdf', bbox_inches='tight')
+
+
+plt.show()
 
 
 
