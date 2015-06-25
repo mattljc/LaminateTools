@@ -2,9 +2,10 @@
 *properties.txt
 *output.txt
 
-# Homework and school project files
+# Homework project files, test scripts
 HW*
 #AME*
+*_test_script.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
