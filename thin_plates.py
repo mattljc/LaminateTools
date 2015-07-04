@@ -10,57 +10,57 @@ class Plate(property_interface.Material):
     See wiki for more details on theoretical aspects.
     """
 
-	def __init__(self, property_dict = None):
-		property_interface.Material.__init__(self, property_dict)
+    def __init__(self, property_dict = None):
+        property_interface.Material.__init__(self, property_dict)
 
-		# MINIMUM FUNCTIONAL PROPERTY SET
-		try:
-			self.E11 = float(property_dict['E11'])
-			self.E22 = float(property_dict['E22'])
-			self.Nu12 = float(property_dict['Nu12'])
-			self.G12 = float(property_dict['G12'])
-		except KeyError:
-			raise KeyError('Check input, minimum information not provided')
+        # MINIMUM FUNCTIONAL PROPERTY SET
+        try:
+            self.E11 = float(property_dict['E11'])
+            self.E22 = float(property_dict['E22'])
+            self.Nu12 = float(property_dict['Nu12'])
+            self.G12 = float(property_dict['G12'])
+        except KeyError:
+            raise KeyError('Check input, minimum information not provided')
 
-		# These properties are not required for basic functionality.
-		# CTE
-		try:
-			self.A1 = propsDict['a1']
-			self.A2 = propsDict['a2']
-		except KeyError:
-			warnings.warn('No CTE included, setting all CTE to zero')
-			self.A1 = 0
-			self.A2 = 0
+        # These properties are not required for basic functionality.
+        # CTE
+        try:
+            self.A1 = propsDict['a1']
+            self.A2 = propsDict['a2']
+        except KeyError:
+            warnings.warn('No CTE included, setting all CTE to zero')
+            self.A1 = 0
+            self.A2 = 0
 
-		# STRESS LIMITS
-		try:
-			self.F1t = float(self.InputDict['f1t'])
-			self.F1c = float(self.InputDict['f1c'])
-			self.F2t = float(self.InputDict['f2t'])
-			self.F2c = float(self.InputDict['f2c'])
-			self.F12s = float(self.InputDict['f12s'])
-		except KeyError:
-			warnings.warn('No stress limits included, setting all to infinity')
-			self.F1t = np.inf
-			self.F1c = np.inf
-			self.F2t = np.inf
-			self.F2c = np.inf
-			self.F12s = np.inf
+        # STRESS LIMITS
+        try:
+            self.F1t = float(self.InputDict['f1t'])
+            self.F1c = float(self.InputDict['f1c'])
+            self.F2t = float(self.InputDict['f2t'])
+            self.F2c = float(self.InputDict['f2c'])
+            self.F12s = float(self.InputDict['f12s'])
+        except KeyError:
+            warnings.warn('No stress limits included, setting all to infinity')
+            self.F1t = np.inf
+            self.F1c = np.inf
+            self.F2t = np.inf
+            self.F2c = np.inf
+            self.F12s = np.inf
 
-		# STRAIN LIMITS
-		try:
-			self.Ep1t = self.InputDict['e1t']
-			self.Ep1c = self.InputDict['e1c']
-			self.Ep2t = self.InputDict['e2t']
-			self.Ep2c = self.InputDict['e2c']
-			self.Ep12s = self.InputDict['e12s']
-		except KeyError:
-			warnings.warn('No strain limits included, setting all to infinity')
-			self.Ep1t = np.inf
-			self.Ep1c = np.inf
-			self.Ep2t = np.inf
-			self.Ep2c = np.inf
-			self.Ep12s = np.inf
+        # STRAIN LIMITS
+        try:
+            self.Ep1t = self.InputDict['e1t']
+            self.Ep1c = self.InputDict['e1c']
+            self.Ep2t = self.InputDict['e2t']
+            self.Ep2c = self.InputDict['e2c']
+            self.Ep12s = self.InputDict['e12s']
+        except KeyError:
+            warnings.warn('No strain limits included, setting all to infinity')
+            self.Ep1t = np.inf
+            self.Ep1c = np.inf
+            self.Ep2t = np.inf
+            self.Ep2c = np.inf
+            self.Ep12s = np.inf
 
         # TODO: Add necessary handlers for vibration analysis
 
@@ -81,7 +81,7 @@ class Plate(property_interface.Material):
     def make_stiffness(self):
             self.Stiffness = self.make_compliance.I
 
-	def make_invariants(self):
+    def make_invariants(self):
         try:
             return [self.U1, self.U2, self.U3, self.U4, self.U5]
         except AttributeError:
@@ -296,8 +296,8 @@ class ThinPlates(property_interface.Properties):
                 f2c = ply.Material.f2c
                 f12s = ply.Material.f12s
                 ply.HoffmanFail = -s1**2/(f1t*f1c) + s1*s2/(f1t*f1c) \
-                                  -s2**2/(f2t*f2c) + s1*(1/f1t+1/f1c) \
-                                   s2*(1/f2t+1/f2c) + (s12/f12s)**2
+                                -s2**2/(f2t*f2c) + s1*(1/f1t+1/f1c) \
+                                +s2*(1/f2t+1/f2c) + (s12/f12s)**2
                 index.append(ply.HoffmanFail)
 
             elif type=='tsaihill':
@@ -323,3 +323,27 @@ class ThinPlates(property_interface.Properties):
                 index.append(ply.MaxStrainFail)
 
         return np.array(index)
+
+if __name__=="__main__":
+    matl_dict = {'name':'AS4-8552-UNI',
+                'thk':0.0074,
+                'dens':0.057,
+                'E11':19.09e6,
+                'E22':1.34e6,
+                'Nu12':0.335,
+                'G12':0.70e6,
+                'f1t':279.61e3,
+                'f1c':215.29e3,
+                'f2t':9.27e3,
+                'f2c':38.85e3,
+                'f12s':13.28e3,}
+    matl = thin_plates.Plate(matl_dict)
+
+    plate00 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':0})
+    plate30 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':30})
+    plate60 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':60})
+    plate90 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':90})
+    stack = [plate00,plate30,plate60,plate90]
+
+    lam = laminate_fundamentals.Laminate(stack, 2, True)
+    res = thin_plates.ThinPlates(lam)
