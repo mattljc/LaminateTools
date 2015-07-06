@@ -1,3 +1,6 @@
+from copy import deepcopy
+import property_interface
+
 """Defines the two fundamental types required for all laminate analysis.
 """
 
@@ -10,11 +13,11 @@ class Ply(object):
     """
 
     def __init__(self, input_dict):
-        assert isinstance(definitionDict['matl'], property_interface.Material)
+        assert isinstance(input_dict['matl'], property_interface.Material)
         try:
-            self.Material = definitionDict['matl']
-            self.Thickness = float(definitionDict['thk'])
-            self.Orientation = float(definitionDict['orient'])
+            self.Material = input_dict['matl']
+            self.Thickness = float(input_dict['thk'])
+            self.Orientation = float(input_dict['orient'])
         except KeyError:
             raise KeyError('Check ply input, minimum information not provided')
 
@@ -80,7 +83,7 @@ class Laminate(object):
         output += 'symmetry? '+str(self.Symmetry)+'\n'
         for ply in self.PlyStack:
             output += ply.__repr__()+'\n'
-            return output
+        return output
 
     def toXML(self):
         raise NotImplementedError

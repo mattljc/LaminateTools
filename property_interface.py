@@ -4,8 +4,8 @@ This module contains the basic constructors and minimum method definitions
 required to define fabric properties and calculate the laminate properties
 resulting from this.
 """
-
-from laminate_fundamentals as lf
+import numpy as np
+import laminate_fundamentals as lf
 
 class Material(object):
     """Superclass for all ply materials.
@@ -53,7 +53,7 @@ class Properties(object):
     """
 
     def __init__(self, laminate_input):
-        assert isinstance(lam,lf.Laminate), 'Input not a laminate'
+        assert isinstance(laminate_input,lf.Laminate), 'Input not a laminate'
         self.Laminate = laminate_input
         self.TotalThickness = 0
         self.TotalDensity = 0

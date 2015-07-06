@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 import property_interface
+import laminate_fundamentals as lf
 
 class Plate(property_interface.Material):
     """A plate material for use in classical laminated plate theory (CLPT).
@@ -25,20 +26,20 @@ class Plate(property_interface.Material):
         # These properties are not required for basic functionality.
         # CTE
         try:
-            self.A1 = propsDict['a1']
-            self.A2 = propsDict['a2']
+            self.CTE_1 = property_dict['CTE_1']
+            self.CTE_2 = property_dict['CTE_2']
         except KeyError:
             warnings.warn('No CTE included, setting all CTE to zero')
-            self.A1 = 0
-            self.A2 = 0
+            self.CTE_1 = 0
+            self.CTE_2 = 0
 
         # STRESS LIMITS
         try:
-            self.F1t = float(self.InputDict['f1t'])
-            self.F1c = float(self.InputDict['f1c'])
-            self.F2t = float(self.InputDict['f2t'])
-            self.F2c = float(self.InputDict['f2c'])
-            self.F12s = float(self.InputDict['f12s'])
+            self.F1t = float(property_dict['f1t'])
+            self.F1c = float(property_dict['f1c'])
+            self.F2t = float(property_dict['f2t'])
+            self.F2c = float(property_dict['f2c'])
+            self.F12s = float(property_dict['f12s'])
         except KeyError:
             warnings.warn('No stress limits included, setting all to infinity')
             self.F1t = np.inf
@@ -49,11 +50,11 @@ class Plate(property_interface.Material):
 
         # STRAIN LIMITS
         try:
-            self.Ep1t = self.InputDict['e1t']
-            self.Ep1c = self.InputDict['e1c']
-            self.Ep2t = self.InputDict['e2t']
-            self.Ep2c = self.InputDict['e2c']
-            self.Ep12s = self.InputDict['e12s']
+            self.Ep1t = float(property_dict['e1t'])
+            self.Ep1c = float(property_dict['e1c'])
+            self.Ep2t = float(property_dict['e2t'])
+            self.Ep2c = float(property_dict['e2c'])
+            self.Ep12s = float(property_dict['e12s'])
         except KeyError:
             warnings.warn('No strain limits included, setting all to infinity')
             self.Ep1t = np.inf
@@ -79,12 +80,14 @@ class Plate(property_interface.Material):
             return self.Compliance
 
     def make_stiffness(self):
-            self.Stiffness = self.make_compliance.I
+            self.Stiffness = self.make_compliance().I
+            return self.Stiffness
 
     def make_invariants(self):
         try:
             return [self.U1, self.U2, self.U3, self.U4, self.U5]
         except AttributeError:
+            Q = self.make_stiffness()
             self.U1 = (Q[0,0] + Q[1,1])*3/8 + Q[0,1]/4 + Q[2,2]/2
             self.U2 = (Q[0,0] - Q[1,1])/2
             self.U3 = (Q[0,0] + Q[1,1])/8 - Q[0,1]/4 - Q[2,2]/2
@@ -106,10 +109,7 @@ class ThinPlates(property_interface.Properties):
     """
 
     def __init__(self, lam=None):
-        try:
-            property_interface.Properties.__init__(self,lam)
-        except AttributeError:
-            raise  AttributeError('Check material has the required properties')
+        property_interface.Properties.__init__(self,lam)
 
     def make_global_stiffness(self):
         """Builds ABD matrix ply by ply, and returns the augmented ABD matrix.
@@ -134,7 +134,7 @@ class ThinPlates(property_interface.Properties):
 
             # Build global stiffness ply by ply, then add to the ABD matrix.
             # Invariant method is used to ensure matrix symetry in the final result.
-            for ply in self.laminate.PlyStack:
+            for ply in self.Laminate.PlyStack:
                 zUp = zLow + ply.Thickness
                 U = ply.Material.make_invariants()
                 c4 = np.cos(4 * np.radians(ply.Orientation))
@@ -150,15 +150,15 @@ class ThinPlates(property_interface.Properties):
                 Q66 = U[4] - U[2]*c4
                 Q16 = U[1]*s2/2 + U[2]*s4
                 Q26 = U[1]*s2/2 - U[2]*s4
-                ax = ply.Material.a1*c1**2 + ply.Material.a2*s1**2
-                ay = ply.Material.a1*s1**2 + ply.Material.a2*c1**2
-                axy = (ply.Material.a2-ply.Material.a1)*c1*s1
+                cte_x = ply.Material.CTE_1*c1**2 + ply.Material.CTE_2*s1**2
+                cte_y = ply.Material.CTE_1*s1**2 + ply.Material.CTE_2*c1**2
+                cte_xy = (ply.Material.CTE_2-ply.Material.CTE_1)*c1*s1
 
                 ply.GlobalStiffness = np.matrix([
                 [Q11, Q12, Q16], \
                 [Q12, Q22, Q26], \
                 [Q16, Q26, Q66]])
-                ply.GlobalCTE = np.matrix([[ax],[ay],[axy]])
+                ply.GlobalCTE = np.matrix([[cte_x],[cte_y],[cte_xy]])
 
                 self.A += ply.GlobalStiffness * (zUp - zLow)
                 self.B += ply.GlobalStiffness * (zUp**2 - zLow**2) / 2
@@ -172,6 +172,7 @@ class ThinPlates(property_interface.Properties):
             self.ABD[0:3,3:] = self.B
             self.ABD[3:,0:3] = self.B
             self.ABD[3:,3:] = self.D
+            return self.ABD
 
     def make_global_compliance(self):
         """Returns the inverted ABD matrix.
@@ -180,7 +181,7 @@ class ThinPlates(property_interface.Properties):
         reasons to make_global_stiffness this returns the inveted ABD matrix
         instead of just the global compliance matrix.
         """
-        return self.make_global_stiffness.I
+        return self.make_global_stiffness().I
 
     def make_effective_properties(self):
         """Returns a dictionary containing overall laminate properties. This
@@ -192,7 +193,7 @@ class ThinPlates(property_interface.Properties):
         try:
             return self.EffectiveProperties
         except AttributeError:
-            effective_compliance = self.make_global_compliance()
+            effective_compliance = self.make_global_compliance()[0:3,0:3]
             Exx = 1 / (effective_compliance[0,0] * self.TotalThickness)
             Eyy = 1 / (effective_compliance[1,1] * self.TotalThickness)
             Gxy = 1 / (effective_compliance[2,2] * self.TotalThickness)
@@ -200,6 +201,8 @@ class ThinPlates(property_interface.Properties):
             Etaxs = effective_compliance[0,2] / effective_compliance[0,0]
             Etays = effective_compliance[1,2] / effective_compliance[1,1]
 
+            print(effective_compliance)
+            print(self.specificNT)
             effective_CTE = effective_compliance * self.specificNT
             ax = effective_CTE[0,0]
             ay = effective_CTE[1,0]
@@ -337,13 +340,17 @@ if __name__=="__main__":
                 'f2t':9.27e3,
                 'f2c':38.85e3,
                 'f12s':13.28e3,}
-    matl = thin_plates.Plate(matl_dict)
+    matl = Plate(matl_dict)
 
-    plate00 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':0})
-    plate30 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':30})
-    plate60 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':60})
-    plate90 = laminate_fundamentals.Ply({'matl':matl,'thk':0.0074,'orient':90})
+    plate00 = lf.Ply({'matl':matl,'thk':0.0074,'orient':0})
+    plate30 = lf.Ply({'matl':matl,'thk':0.0074,'orient':30})
+    plate60 = lf.Ply({'matl':matl,'thk':0.0074,'orient':60})
+    plate90 = lf.Ply({'matl':matl,'thk':0.0074,'orient':90})
     stack = [plate00,plate30,plate60,plate90]
 
-    lam = laminate_fundamentals.Laminate(stack, 2, True)
-    res = thin_plates.ThinPlates(lam)
+    lam = lf.Laminate(stack, 2, True)
+    res = ThinPlates(lam)
+    res.make_effective_properties()
+
+    print(res)
+    #print(res.Laminate)
