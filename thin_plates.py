@@ -3,11 +3,11 @@ import numpy as np
 import property_interface
 import laminate_fundamentals as lf
 
-class Plate(property_interface.Material):
+class Plate2D(property_interface.Material):
     """A plate material for use in classical laminated plate theory (CLPT).
 
     In addition to the terms required for the Material superclass, CLPT
-    Plate materials require the 4 in-plane properties: E11, E22, Nu12 and G12.
+    Plate2D materials require the 4 in-plane properties: E11, E22, Nu12 and G12.
     See wiki for more details on theoretical aspects.
     """
 
@@ -340,7 +340,7 @@ if __name__=="__main__":
                 'f2t':9.27e3,
                 'f2c':38.85e3,
                 'f12s':13.28e3,}
-    matl = Plate(matl_dict)
+    matl = Plate2D(matl_dict)
 
     plate00 = lf.Ply({'matl':matl,'thk':0.0074,'orient':0})
     plate30 = lf.Ply({'matl':matl,'thk':0.0074,'orient':30})
